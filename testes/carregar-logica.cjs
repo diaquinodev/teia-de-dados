@@ -5,7 +5,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 // TEIA_HTML permite rodar os mesmos testes contra uma cópia com erro plantado (mutantes.cjs).
-const PAGINA = process.env.TEIA_HTML || path.join(__dirname, "..", "pagina", "teia-de-dados.html");
+const PAGINA = process.env.TEIA_HTML || path.join(__dirname, "..", "docs", "index.html");
 
 function extrair(html) {
   const ini = html.indexOf("// <teia-logica>");

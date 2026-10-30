@@ -19,10 +19,10 @@ const conf = (categoria, onde, cond, msg) => {
 const sp = (t) => String(t ?? "").replace(/\s+/g, " ").trim();
 const br = (n) => Math.round(n).toLocaleString("pt-BR");
 
-// O publicador do claude.ai embrulha a página num esqueleto com charset, viewport e um reset.
-const PREVIA = path.join(__dirname, "preview.html");
-fs.writeFileSync(PREVIA, `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light}body{margin:0;font:14px system-ui}[hidden]{display:none!important}img{max-width:100%}</style></head><body>${fs.readFileSync(process.env.TEIA_HTML || path.join(RAIZ, "pagina", "teia-de-dados.html"), "utf8")}</body></html>`);
-const URL = "file:///" + PREVIA.replace(/\\/g, "/");
+// Abre o arquivo publicado como está: o que o teste vê é o que o GitHub Pages serve.
+const PAGINA = process.env.TEIA_HTML || path.join(RAIZ, "docs", "index.html");
+// TEIA_URL roda a mesma suíte contra o site no ar.
+const URL = process.env.TEIA_URL || "file:///" + PAGINA.replace(/\\/g, "/");
 const TELAS = path.join(__dirname, "telas");
 fs.mkdirSync(TELAS, { recursive: true });
 
@@ -47,7 +47,7 @@ async function abrir(browser, alvo, tema) {
   p.on("console", (m) => m.type() === "error" && erros.push(m.text()));
   p.on("request", (r) => {
     const u = r.url();
-    if (!u.startsWith("file:") && !u.startsWith("data:") && !/^https:\/\/fonts\.(googleapis|gstatic)\.com\//.test(u)) externos.push(u);
+    if (!u.startsWith("file:") && !u.startsWith("data:") && !(process.env.TEIA_URL && u.startsWith(process.env.TEIA_URL)) && !/^https:\/\/fonts\.(googleapis|gstatic)\.com\//.test(u)) externos.push(u);
   });
   await p.goto(URL);
   await p.waitForLoadState("networkidle").catch(() => {});
@@ -202,6 +202,8 @@ async function testarTela(alvo, tema, browser) {
   conf("Tela", onde, await p.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), "rolagem lateral depois de usar o agente");
   // A página só pode buscar as fontes do Google Fonts (dito no texto dela); qualquer outro
   // endereço de fora é falha.
+  const pub = await p.evaluate(() => ({ modo: document.compatMode, cs: document.characterSet, vp: !!document.querySelector('meta[name="viewport"]') }));
+  conf("Publicação", onde, pub.modo === "CSS1Compat" && pub.cs === "UTF-8" && pub.vp, `página não se sustenta sozinha: ${JSON.stringify(pub)}`);
   conf("Segurança", onde, externos.length === 0, `requisições para fora além das fontes: ${externos.join(", ")}`);
   conf("Tela", onde, erros.length === 0, `erros no console: ${erros.join(" | ")}`);
   await p.evaluate(() => window.scrollTo(0, 0));

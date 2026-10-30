@@ -6,7 +6,8 @@
     "test": "npm run test:regras && npm run test:mutantes && npm run test:tela",
     "test:regras": "node --test testes/regras.test.cjs",
     "test:mutantes": "node testes/mutantes.cjs",
-    "test:tela": "node testes/tela.cjs"
+    "test:tela": "node testes/tela.cjs",
+    "prints": "node testes/prints.cjs"
   },
   "devDependencies": {
     "axe-core": "^4.10.2",
