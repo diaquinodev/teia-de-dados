@@ -584,13 +584,14 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
       const especificos = catalogo.produtos.filter((p) => p.termos.some((t) => new RegExp(`\\b${t}\\b`).test(q))).map((p) => p.ean);
       const familias = [...new Set(catalogo.produtos.flatMap((p) => p.familias ?? []))].sort((a, b) => b.length - a.length);
       const escolhidos = new Set(especificos);
+      const grupos = especificos.map((e) => [e]); // cada nome citado precisa sobreviver ao filtro de volume
       let semFamilia = q;
       for (const f of familias) {
         const re = new RegExp(`\\b${f}\\b`, "g");
         if (!semFamilia.match(re)) continue;
         semFamilia = semFamilia.replace(re, " ");
         const membros = catalogo.produtos.filter((p) => p.familias?.includes(f)).map((p) => p.ean);
-        if (!membros.some((e) => especificos.includes(e))) membros.forEach((e) => escolhidos.add(e));
+        if (!membros.some((e) => especificos.includes(e))) { membros.forEach((e) => escolhidos.add(e)); grupos.push(membros); }
       }
       let produtos = catalogo.produtos.filter((p) => escolhidos.has(p.ean)).map((p) => p.ean);
       const conhecidas = new Set([...VOCABULARIO, ...catalogo.redes.flatMap((r) => r.termos.join(" ").split(" ")), ...catalogo.produtos.flatMap((p) => p.termos.join(" ").split(" "))]);
@@ -603,7 +604,7 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
       if (redeIncompleta) return { tipo: "esclarecer", motivo: "rede-incompleta" };
 
       // "sem a Aurora" é exclusão, que o agente não faz: filtrar pela Aurora seria o contrário do pedido.
-      const nomes = [...catalogo.redes.flatMap((r) => r.termos), ...catalogo.produtos.flatMap((p) => p.termos), ...familias].join("|");
+      const nomes = [...catalogo.redes.flatMap((r) => r.termos), ...catalogo.produtos.flatMap((p) => p.termos), ...familias, String.raw`\d+(?:[.,]\d+)?\s*(?:ml|l)`].join("|");
       if (new RegExp(`\\b(?:sem|menos)\\s+(?:(?:a|o|as|os|da|do|das|dos|rede|redes)\\s+)*(?:${nomes})\\b`).test(q)) return { tipo: "esclarecer", motivo: "exclusao" };
 
       // Volume só restringe produto já escolhido; sozinho ou sem combinar, pergunta.
@@ -611,7 +612,9 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
       if (volumes.length) {
         if (!produtos.length) return { tipo: "esclarecer", motivo: "volume-sem-produto" };
         const nomeDe = (ean) => norm(catalogo.produtos.find((p) => p.ean === ean).nome);
-        produtos = produtos.filter((e) => volumes.some((v) => new RegExp(`(^|\\s)${v}$`).test(nomeDe(e))));
+        const temVolume = (e) => volumes.some((v) => new RegExp(`(^|\\s)${v}$`).test(nomeDe(e)));
+        if (grupos.some((g) => !g.some(temVolume))) return { tipo: "esclarecer", motivo: "volume-nao-bate" };
+        produtos = produtos.filter(temVolume);
         if (!produtos.length) return { tipo: "esclarecer", motivo: "volume-nao-bate" };
       }
 
@@ -626,6 +629,8 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
       if (trecho) {
         const nums = trecho[0].match(/\d{1,2}/g).map(Number);
         const intervalo = /\ba\b|\bate\b|-/.test(trecho[2]) || (/\bentre\b/.test(qs) && nums.length === 2);
+        // "40 a 41 e 43" mistura intervalo e lista: em vez de escolher um, pergunta.
+        if (intervalo && nums.length > 2) return { tipo: "esclarecer", motivo: "periodo-misturado" };
         semanasPedidas = intervalo
           ? Array.from({ length: Math.max(...nums) - Math.min(...nums) + 1 }, (_, i) => Math.min(...nums) + i)
           : [...new Set(nums)].sort((a, b) => a - b);
@@ -919,6 +924,7 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
     if (p.tipo === "naoEntendi") return `<p>Não entendi qual dado você precisa. Posso trazer sell-in, sell-out, estoque na rede ou preço, por rede, produto e semana. Tente: <i>"sell-out da Rede Aurora na semana 43 por produto"</i>.</p>`;
     if (p.tipo === "esclarecer") {
       if (p.motivo === "preco-misturado") return `<p>Preço é uma média e não se soma com unidades. Peça o preço separado das outras medidas.</p>`;
+      if (p.motivo === "periodo-misturado") return `<p>Esse período mistura intervalo e lista. Escreva um dos dois: <i>"semanas 40 a 43"</i> ou <i>"semanas 40, 41 e 43"</i>.</p>`;
       if (p.motivo === "numero-solto") return `<p>Não sei a que esse número se refere, e não vou trocar por outra semana. Para escolher o período, escreva <i>"semana 42"</i> ou <i>"semanas 40 a 42"</i>.</p>`;
       if (p.motivo === "ultimas-fora") return `<p>A base tem ${CATALOGO.semanas.length} semanas (${CATALOGO.semanas[0]} a ${SEMANA_ATUAL}). Peça entre 1 e ${CATALOGO.semanas.length} últimas semanas.</p>`;
       if (p.motivo === "rede-incompleta") return `<p>Qual rede? As da base são ${CATALOGO.redes.map((r) => r.nome).join(", ")}.</p>`;

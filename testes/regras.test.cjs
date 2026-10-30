@@ -476,6 +476,12 @@ describe("interpretação do pedido", () => {
     ["sell-out da boa", { tipo: "esclarecer", motivo: "rede-incompleta" }],
     ["boa tarde, sell-out geral", consulta({})],
     ["sell-out sem a aurora", { tipo: "esclarecer", motivo: "exclusao" }],
+    ["sell-out de sucos sem 1 L", { tipo: "esclarecer", motivo: "exclusao" }],
+    // Volume não derruba nome citado; período misturado não vira intervalo.
+    ["sell-out do suco de uva e chá verde 1,5 L", { tipo: "esclarecer", motivo: "volume-nao-bate" }],
+    ["sell-out de suco e chá 1,5 L", { tipo: "esclarecer", motivo: "volume-nao-bate" }],
+    ["sell-out de 40 a 41 e 43", { tipo: "esclarecer", motivo: "periodo-misturado" }],
+    ["sell-out semanas 40 a 41 e 43", { tipo: "esclarecer", motivo: "periodo-misturado" }],
     ["sell-out menos suco", { tipo: "esclarecer", motivo: "exclusao" }],
     ["", { tipo: "vazio" }],
     ["bom dia", { tipo: "naoEntendi" }],

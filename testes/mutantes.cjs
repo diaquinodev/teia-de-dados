@@ -43,18 +43,24 @@ const MUTANTES = [
   ["preço não forçado por produto", `|| metricas.includes("preco") ||`, "||"],
   ["pedido fora do padrão respondido", `if (FORA.test(q)) return { tipo: "fora" };`, ""],
   ["família de produto ignorada", "membros.forEach((e) => escolhidos.add(e));", ""],
-  ["nome específico não vence a família", "if (!membros.some((e) => especificos.includes(e))) membros", "membros"],
+  ["nome específico não vence a família", "if (!membros.some((e) => especificos.includes(e))) {", "{"],
   ["número solto vira a semana mais recente", String.raw`if (/\d/.test(sobra)) return`, "if (false) return"],
   ["últimas semanas além da base aceitas", 'motivo: "ultimas-fora"', 'motivo: "x"'],
   ["rede pela metade vira todas", "if (redeIncompleta) return", "if (false) return"],
-  ["exclusão vira filtro", 'return { tipo: "esclarecer", motivo: "exclusao" };', ""],
+  ["exclusão vira filtro", 'return { tipo: "esclarecer", motivo: "exclusao" };', "void 0;"],
   ["volume ignorado", "if (volumes.length) {", "if (false) {"],
   ["intervalo sem a palavra semana perdido", '"semanas $1 a $2"', '"$1 $2"'],
+  ["volume derruba nome citado sem perguntar", "if (grupos.some((g) => !g.some(temVolume))) return", "if (false) return"],
+  ["exclusão de volume vira filtro", "(?:ml|l)`].join", "(?:zz)`].join"],
+  ["período misturado vira intervalo", "if (intervalo && nums.length > 2) return", "if (false) return"],
   ["estoque negativo não acende a conferência", "empates.length + estoqueNegativo.length", "empates.length"],
   // Consulta
   ["grupo sem dado somado como zero", "if (linhas.some((r) => r[m] === null)) return null;", ""],
   ["tabela fora da ordem do ORDER BY", ".sort((x, y) => (x.chave[0] ?? 0) - (y.chave[0] ?? 0))", ""],
 ];
+
+const vm = require("node:vm");
+const { extrair } = require("./carregar-logica.cjs");
 
 const original = fs.readFileSync(PAGINA, "utf8");
 const pasta = fs.mkdtempSync(path.join(os.tmpdir(), "teia-mutantes-"));
@@ -62,6 +68,9 @@ let sobreviventes = 0, invalidos = 0;
 for (const [nome, de, para] of MUTANTES) {
   const n = original.split(de).length - 1;
   if (n !== 1) { invalidos++; console.log(`INVÁLIDO   ${nome}: trecho aparece ${n} vezes`); continue; }
+  // Erro de sintaxe faria todos os testes falharem sem provar nada: não conta como pego.
+  try { new vm.Script(`(function () { ${extrair(original.replace(de, para))}; return Teia; })`); }
+  catch (e) { invalidos++; console.log(`INVÁLIDO   ${nome}: ${e.message}`); continue; }
   const arquivo = path.join(pasta, "mutante.html");
   fs.writeFileSync(arquivo, original.replace(de, para));
   const r = spawnSync(process.execPath, ["--test", path.join(__dirname, "regras.test.cjs")], { env: { ...process.env, TEIA_HTML: arquivo }, encoding: "utf8" });

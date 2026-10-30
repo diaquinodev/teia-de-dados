@@ -10,12 +10,13 @@ fase-2-agente-sem-troca-silenciosa
 média
 
 ## Plano/fase
-[[plans/teia-de-dados/phase-2-agente-sem-troca-silenciosa]]
+No QG (repositório privado): `brain/plans/teia-de-dados/phase-2-agente-sem-troca-silenciosa.md`
 
 ## Feito
 - fase 1 integrada: site no ar, publicado pela `main` `/docs`
 - agente: família de produtos, volume, intervalo sem a palavra semana; número solto, nome pela metade e exclusão viram pergunta
 - carga: estoque negativo aparece na conferência e deixa a carga parcial
+- revisão do CodeRabbit aplicada: exclusão de volume, volume que derrubava nome citado, período misturado, mutantes sem sintaxe válida
 - README: lógica do agente, fluxogramas e matriz de validação; suíte completa verde no arquivo local
 
 ## Falta

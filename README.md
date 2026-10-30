@@ -54,7 +54,7 @@ flowchart TD
     F -- não --> D{Todas as palavras<br/>são conhecidas?}
     D -- não --> X3[Diz o que não reconheceu]:::pergunta
     D -- sim --> A{O pedido é claro?}
-    A -- "nome pela metade, exclusão,<br/>volume que não bate, número solto,<br/>vendas sem dizer qual dado" --> X4[Faz uma pergunta]:::pergunta
+    A -- "nome pela metade, exclusão,<br/>volume que não bate, número solto,<br/>período misturado, vendas sem dizer qual dado" --> X4[Faz uma pergunta]:::pergunta
     A -- sim --> S{A semana existe<br/>na base?}
     S -- não --> X5[Informa o período disponível]:::pergunta
     S -- sim --> T{O que foi pedido?}
@@ -82,6 +82,7 @@ Verde: responde. Laranja: pergunta ou explica. Vermelho: não responde.
 | `sell-out da boa` | Pergunta qual rede | Metade de um nome não escolhe rede |
 | `sell-out sem a aurora` | Avisa que não faz exclusões | Filtrar a Aurora seria o contrário do pedido |
 | `sell-out de Fanta` | Diz que não reconhece "fanta" | Produto fora da base |
+| `sell-out de 40 a 41 e 43` | Pede para escrever só intervalo ou só lista | Não inclui a semana 42 sem ter sido pedida |
 | `sell-out da semana 99` | Informa as semanas disponíveis | Não troca por outra semana |
 | `qual a margem da Rede Aurora` | Não responde | Dado financeiro está fora do escopo |
 
@@ -177,8 +178,8 @@ agente. Validação pelas áreas, aprovação humana e medição ficam para a op
 
 - `docs/index.html` — a página. As regras ficam no bloco `<teia-logica>`, em funções puras
   (`carregar`, `recomendar`, `interpretar`, `consultar`), sem acesso à tela.
-- `testes/regras.test.cjs` — regras com casos escritos à mão, inclusive os limites (125 testes).
-- `testes/mutantes.cjs` — planta 42 erros de regra, um por vez, e exige que os testes falhem (42 de 42 pegos).
+- `testes/regras.test.cjs` — regras com casos escritos à mão, inclusive os limites (130 testes).
+- `testes/mutantes.cjs` — planta 45 erros de regra, um por vez, e exige que os testes falhem (45 de 45 pegos).
 - `testes/tela.cjs` — abre o arquivo publicado em 10 aparelhos (Chrome, Edge, Firefox,
   Safari/WebKit; computador, iPhone, iPad, Android), em tema claro e escuro: números conferidos
   contra os arquivos brutos, segurança e acessibilidade (axe).
@@ -220,6 +221,6 @@ Para rodar os testes de tela contra o site no ar, no Git Bash: `TEIA_URL=https:/
 11. Agente: só aceita palavras e nomes que conhece e nunca amplia nem troca o pedido. Entende semana,
     lista e intervalo ("semanas 40 a 42", "da 40 até a 42"), família de produtos ("suco") e volume
     junto de um produto. Pergunta quando recebe "vendas", número solto, nome de rede pela metade,
-    exclusão ou volume que não combina. Preço sai por produto. Pedidos financeiros, pessoais ou de
+    exclusão, volume que não combina ou período que mistura intervalo e lista. Preço sai por produto. Pedidos financeiros, pessoais ou de
     concorrência não são respondidos. A conferência da tabela é de consistência (cálculo contra
     tabela), não uma fonte independente.
