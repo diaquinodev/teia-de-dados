@@ -1,21 +1,70 @@
 # Teia de Dados Comercial
 
-Demonstração com dados fictícios para um processo seletivo: arquivos de sell-in e sell-out
-chegam de fornecedores, passam por uma carga conferida e viram uma base única. Dessa base saem
-as recomendações para vendas e as respostas de um agente de pedidos de dados.
+Prova de conceito com **dados fictícios**: arquivos de sell-in (o que a indústria vende para a
+rede) e sell-out (o que a rede vende ao consumidor) chegam dos fornecedores, passam por uma carga
+conferida e viram uma base única. Dessa base saem recomendações para vendas e as respostas de um
+agente de pedidos de dados.
 
-Publicada em https://claude.ai/artifact/QypidgWmGtmVi2o64aZft9 (página única, sem servidor).
+**Abrir a demonstração:** https://diaquinodev.github.io/teia-de-dados/ (sem login, sem instalar nada)
 
-## Como está organizado
+| Computador | Celular |
+|---|---|
+| ![Início da página](docs/prints/inicio.png) | ![Recomendações no celular](docs/prints/celular.png) |
 
-- `pagina/teia-de-dados.html` — a página. As regras de negócio ficam no bloco
-  `<teia-logica>`, em funções puras (`carregar`, `recomendar`, `interpretar`, `consultar`),
-  sem acesso à tela.
-- `testes/regras.test.cjs` — regras com casos escritos à mão, inclusive os limites.
-- `testes/mutantes.cjs` — planta 20 erros de regra, um por vez, e exige que os testes falhem.
-- `testes/tela.cjs` — 10 aparelhos (Chrome, Edge, Firefox, Safari/WebKit; computador, iPhone,
-  iPad, Android) em tema claro e escuro; números conferidos contra os arquivos brutos; segurança
-  e acessibilidade (axe).
+## O problema
+
+Em áreas comerciais, boa parte do tempo vai para juntar arquivos de fontes diferentes, conferir
+se os números batem e responder pedidos repetidos. O risco não é só a demora: uma semana sem
+arquivo tratada como venda zero vira uma decisão errada. Esta demonstração mostra como eu
+começaria a atacar isso, em pequena escala, antes de desenhar a solução real com o time.
+
+## Como funciona
+
+```mermaid
+flowchart LR
+    A[Arquivos dos fornecedores<br/>sell-in, sell-out e preço] --> B{Carga conferida}
+    B -- reprovado --> C[Rejeitado com o motivo<br/>semana fica sem dado]
+    B -- código sem cadastro --> D[Fora da base e listado]
+    B -- aprovado --> E[(Base única)]
+    E --> F[Recomendações para vendas<br/>ruptura, estoque parado, preço]
+    E --> G[Agente de pedidos de dados]
+    G --> H{Pedido reconhecido?}
+    H -- sim --> I[Consulta, tabela e conferência]
+    H -- ambíguo --> J[Pergunta de esclarecimento]
+    H -- fora do padrão --> K[Não responde]
+```
+
+![Recomendações no computador](docs/prints/recomendacoes.png)
+
+![Agente respondendo um pedido](docs/prints/agente.png)
+
+## Decisões
+
+- **"Sem dado" nunca vira zero.** Falta de arquivo aparece como falta, com o motivo.
+- **Regras antes de IA.** Recomendações e agente são regras explícitas: dá para auditar por que
+  cada resposta saiu. Um modelo de linguagem só entraria onde houvesse necessidade real de
+  interpretar texto livre, atrás de um servidor que proteja a chave e limite o custo.
+- **Página estática.** Sem servidor e sem chave, não há segredo para vazar nem custo para controlar.
+  De fora, a página só carrega as fontes do texto (Google Fonts).
+
+## Limitações
+
+- Dados, redes e produtos são fictícios e gerados no navegador; não há integração com sistemas reais.
+- Não há banco de dados nem modelo de linguagem: o agente reconhece um vocabulário fechado e o
+  SQL exibido explica a consulta, que é calculada em JavaScript.
+- Avisos a fornecedores e pedidos de cadastro são descritos na tela, não enviados.
+- Volumes, limites das regras e o cálculo de tempo são exemplos, a validar com quem faz o processo.
+
+## Organização
+
+- `docs/index.html` — a página. As regras ficam no bloco `<teia-logica>`, em funções puras
+  (`carregar`, `recomendar`, `interpretar`, `consultar`), sem acesso à tela.
+- `testes/regras.test.cjs` — regras com casos escritos à mão, inclusive os limites (100 testes).
+- `testes/mutantes.cjs` — planta 33 erros de regra, um por vez, e exige que os testes falhem (33 de 33 pegos).
+- `testes/tela.cjs` — abre o arquivo publicado em 10 aparelhos (Chrome, Edge, Firefox,
+  Safari/WebKit; computador, iPhone, iPad, Android), em tema claro e escuro: números conferidos
+  contra os arquivos brutos, segurança e acessibilidade (axe).
+- `testes/prints.cjs` — gera os prints deste README.
 
 ## Rodar
 
