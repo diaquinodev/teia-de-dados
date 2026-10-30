@@ -231,6 +231,12 @@ describe("carga dos arquivos", () => {
     assert.equal(linha(base, "a", "111", 1).estoque, null); // 2 + 5 − 10 < 0
   });
 
+  test("estoque negativo é listado e a carga não fica aprovada", () => {
+    const { controle } = carregar(SO_BASICO(), { estoqueInicial: { ...ESTOQUE, "a|111": 2 } });
+    assert.deepEqual(controle.estoqueNegativo[0], { rede: "a", ean: "111", semana: 1, estoque: -3 });
+    assert.equal(controle.status, "parcial");
+  });
+
   test("sem estoque inicial, não há estoque calculado", () => {
     const { base } = carregar(SO_BASICO(), { estoqueInicial: {} });
     assert.ok(base.every((r) => r.estoque === null));
@@ -388,10 +394,10 @@ const CAT_I = {
     { id: "cerrado", nome: "Rede Cerrado", termos: ["cerrado"] },
   ],
   produtos: [
-    { ean: "L", nome: "Chá gelado limão 1,5 L", termos: ["limao"] },
-    { ean: "U", nome: "Suco de uva 1 L", termos: ["uva"] },
-    { ean: "C", nome: "Água de coco 1 L", termos: ["coco"] },
-    { ean: "V", nome: "Chá verde 1,5 L", termos: ["cha verde", "verde"] },
+    { ean: "L", nome: "Chá gelado limão 1,5 L", termos: ["limao"], familias: ["cha gelado", "gelado", "gelada", "cha", "chas"] },
+    { ean: "U", nome: "Suco de uva 1 L", termos: ["uva"], familias: ["suco", "sucos"] },
+    { ean: "C", nome: "Água de coco 1 L", termos: ["coco"], familias: ["agua"] },
+    { ean: "V", nome: "Chá verde 1,5 L", termos: ["cha verde", "verde"], familias: ["cha", "chas"] },
   ],
   semanas: [36, 37, 38, 39, 40, 41, 42, 43],
 };
@@ -443,6 +449,40 @@ describe("interpretação do pedido", () => {
     ["ruptura na semana 42", recs({ tipos: ["ruptura"], semana: 42 })],
     ["o que fazer hoje", recs({})],
     ["preço acima das outras redes", recs({ tipos: ["preco"] })],
+    // Família de produtos filtra; nome específico vence.
+    ["sell-out de água", consulta({ produtos: ["C"], porProduto: true })],
+    ["sell-out de suco", consulta({ produtos: ["U"], porProduto: true })],
+    ["sell-out de chá", consulta({ produtos: ["L", "V"], porProduto: true })],
+    ["sell-out de chá gelado", consulta({ produtos: ["L"], porProduto: true })],
+    ["sell-out de chá verde", consulta({ produtos: ["V"], porProduto: true })],
+    ["sell-out de água de coco", consulta({ produtos: ["C"], porProduto: true })],
+    ["ruptura de chá", recs({ tipos: ["ruptura"], produtos: ["L", "V"] })],
+    // Volume restringe produto escolhido; sozinho ou sem combinar, pergunta.
+    ["sell-out de chá 1,5 L", consulta({ produtos: ["L", "V"], porProduto: true })],
+    ["sell-out do suco de uva 1 L", consulta({ produtos: ["U"], porProduto: true })],
+    ["sell-out de 1 L", { tipo: "esclarecer", motivo: "volume-sem-produto" }],
+    ["sell-out do suco de uva 450 ml", { tipo: "esclarecer", motivo: "volume-nao-bate" }],
+    // Período nunca é trocado.
+    ["sell-out da 40 até a 42", consulta({ semanas: [40, 41, 42] })],
+    ["sell-out de 40 a 42", consulta({ semanas: [40, 41, 42] })],
+    ["sell-out entre 40 e 42", consulta({ semanas: [40, 41, 42] })],
+    ["sell-out da aurora 42", { tipo: "esclarecer", motivo: "numero-solto" }],
+    ["sell-out da aurora na 42", { tipo: "esclarecer", motivo: "numero-solto" }],
+    ["sell-out da aurora em 2025", { tipo: "esclarecer", motivo: "numero-solto" }],
+    ["ruptura 42", { tipo: "esclarecer", motivo: "numero-solto" }],
+    ["sell-out nas últimas 99 semanas", { tipo: "esclarecer", motivo: "ultimas-fora" }],
+    ["sell-out nas últimas 0 semanas", { tipo: "esclarecer", motivo: "ultimas-fora" }],
+    // Nome pela metade e exclusão não viram "todas" nem o contrário do pedido.
+    ["sell-out da boa", { tipo: "esclarecer", motivo: "rede-incompleta" }],
+    ["boa tarde, sell-out geral", consulta({})],
+    ["sell-out sem a aurora", { tipo: "esclarecer", motivo: "exclusao" }],
+    ["sell-out de sucos sem 1 L", { tipo: "esclarecer", motivo: "exclusao" }],
+    // Volume não derruba nome citado; período misturado não vira intervalo.
+    ["sell-out do suco de uva e chá verde 1,5 L", { tipo: "esclarecer", motivo: "volume-nao-bate" }],
+    ["sell-out de suco e chá 1,5 L", { tipo: "esclarecer", motivo: "volume-nao-bate" }],
+    ["sell-out de 40 a 41 e 43", { tipo: "esclarecer", motivo: "periodo-misturado" }],
+    ["sell-out semanas 40 a 41 e 43", { tipo: "esclarecer", motivo: "periodo-misturado" }],
+    ["sell-out menos suco", { tipo: "esclarecer", motivo: "exclusao" }],
     ["", { tipo: "vazio" }],
     ["bom dia", { tipo: "naoEntendi" }],
   ];

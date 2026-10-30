@@ -456,7 +456,7 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
         }
       }
 
-      const base = [];
+      const base = [], estoqueNegativo = [];
       for (const r of redes) {
         for (const p of produtos) {
           let estoque = estoqueInicial[`${r.id}|${p.ean}`] ?? null;
@@ -466,7 +466,8 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
             const sellIn = entradas.has(k) ? entradas.get(k) : null;
             const sellOutW = c ? c.sellOut : null;
             estoque = estoque === null || sellIn === null || sellOutW === null ? null : estoque + sellIn - sellOutW;
-            if (estoque !== null && estoque < 0) estoque = null; // estoque negativo = dado inconsistente
+            // Estoque negativo = dado inconsistente: vira sem dado e aparece na conferência.
+            if (estoque !== null && estoque < 0) { estoqueNegativo.push({ rede: r.id, ean: p.ean, semana: w, estoque }); estoque = null; }
             base.push({ rede: r.id, ean: p.ean, semana: w, sellIn, sellOut: sellOutW, preco: c ? c.preco : null, estoque });
           }
         }
@@ -486,7 +487,7 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
       const semanasSemSellIn = semanas.filter((w) => !si.vencedores.has(`${w}`));
       const empates = [...so.empates.map((k) => ({ fonte: "sellOut", chave: k })), ...si.empates.map((k) => ({ fonte: "sellIn", chave: k }))];
       const bate = totalBase === totalControle && totalBaseSellIn === totalControleSellIn;
-      const lacunas = faltando.length + semanasSemSellIn.length + rejeitados.length + semCadastro.length + empates.length;
+      const lacunas = faltando.length + semanasSemSellIn.length + rejeitados.length + semCadastro.length + empates.length + estoqueNegativo.length;
 
       return {
         base,
@@ -500,7 +501,7 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
           esperados: redes.length * semanas.length,
           recebidosSellOut: sellOut.length, validosSellOut: so.vencedores.size,
           recebidosSellIn: sellIn.length, validosSellIn: si.vencedores.size,
-          faltando, semanasSemSellIn, rejeitados, empates, semCadastro,
+          faltando, semanasSemSellIn, rejeitados, empates, semCadastro, estoqueNegativo,
           substituidos: so.substituidos.map(({ anterior, novo }) => ({
             rede: novo.rede, semana: novo.semana,
             linhasAlteradas: novo.linhas.filter((l) => !anterior.linhas.some((a) => a.produto === l.produto && a.unidades === l.unidades)).length,
@@ -573,25 +574,63 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
     ).split(/\s+/));
     const FORA = /concorr|salario|cpf|cliente final|margem|lucro|senha|faturamento|comissao/;
 
-    /** Lê o pedido e decide o que fazer. Nunca transforma nome desconhecido em "todos". */
+    /** Lê o pedido e decide o que fazer. Nunca amplia nem troca o pedido: o que não entende, pergunta. */
     function interpretar(texto, catalogo) {
       const q = norm(texto).trim();
       if (!q) return { tipo: "vazio" };
       if (FORA.test(q)) return { tipo: "fora" };
       const redes = catalogo.redes.filter((r) => r.termos.some((t) => new RegExp(`\\b${t}\\b`).test(q))).map((r) => r.id);
-      const produtos = catalogo.produtos.filter((p) => p.termos.some((t) => new RegExp(`\\b${t}\\b`).test(q))).map((p) => p.ean);
+      // Nome específico vence: "suco de uva" é só a uva; "suco" sozinho é a família inteira.
+      const especificos = catalogo.produtos.filter((p) => p.termos.some((t) => new RegExp(`\\b${t}\\b`).test(q))).map((p) => p.ean);
+      const familias = [...new Set(catalogo.produtos.flatMap((p) => p.familias ?? []))].sort((a, b) => b.length - a.length);
+      const escolhidos = new Set(especificos);
+      const grupos = especificos.map((e) => [e]); // cada nome citado precisa sobreviver ao filtro de volume
+      let semFamilia = q;
+      for (const f of familias) {
+        const re = new RegExp(`\\b${f}\\b`, "g");
+        if (!semFamilia.match(re)) continue;
+        semFamilia = semFamilia.replace(re, " ");
+        const membros = catalogo.produtos.filter((p) => p.familias?.includes(f)).map((p) => p.ean);
+        if (!membros.some((e) => especificos.includes(e))) { membros.forEach((e) => escolhidos.add(e)); grupos.push(membros); }
+      }
+      let produtos = catalogo.produtos.filter((p) => escolhidos.has(p.ean)).map((p) => p.ean);
       const conhecidas = new Set([...VOCABULARIO, ...catalogo.redes.flatMap((r) => r.termos.join(" ").split(" ")), ...catalogo.produtos.flatMap((p) => p.termos.join(" ").split(" "))]);
       const desconhecidas = [...new Set(q.split(/[^a-z0-9-]+/).filter((t) => t && !conhecidas.has(t) && !/^\d+([,.]\d+)?$/.test(t) && !/^s\d{1,2}$/.test(t)))];
       if (desconhecidas.length) return { tipo: "desconhecido", termos: desconhecidas };
 
+      // Metade de um nome ("boa" sem "praça") não escolhe rede nem vira "todas".
+      const semSaudacao = q.replace(/\bboa tarde\b/g, " ");
+      const redeIncompleta = catalogo.redes.some((r) => !redes.includes(r.id) && r.termos.some((t) => t.includes(" ") && t.split(" ").some((w) => new RegExp(`\\b${w}\\b`).test(semSaudacao))));
+      if (redeIncompleta) return { tipo: "esclarecer", motivo: "rede-incompleta" };
+
+      // "sem a Aurora" é exclusão, que o agente não faz: filtrar pela Aurora seria o contrário do pedido.
+      const nomes = [...catalogo.redes.flatMap((r) => r.termos), ...catalogo.produtos.flatMap((p) => p.termos), ...familias, String.raw`\d+(?:[.,]\d+)?\s*(?:ml|l)`].join("|");
+      if (new RegExp(`\\b(?:sem|menos)\\s+(?:(?:a|o|as|os|da|do|das|dos|rede|redes)\\s+)*(?:${nomes})\\b`).test(q)) return { tipo: "esclarecer", motivo: "exclusao" };
+
+      // Volume só restringe produto já escolhido; sozinho ou sem combinar, pergunta.
+      const volumes = (q.match(/\b\d+(?:[.,]\d+)?\s*(?:ml|l)\b/g) || []).map((v) => v.replace(".", ",").replace(/\s+/g, " ").replace(/(\d)(ml|l)$/, "$1 $2"));
+      if (volumes.length) {
+        if (!produtos.length) return { tipo: "esclarecer", motivo: "volume-sem-produto" };
+        const nomeDe = (ean) => norm(catalogo.produtos.find((p) => p.ean === ean).nome);
+        const temVolume = (e) => volumes.some((v) => new RegExp(`(^|\\s)${v}$`).test(nomeDe(e)));
+        if (grupos.some((g) => !g.some(temVolume))) return { tipo: "esclarecer", motivo: "volume-nao-bate" };
+        produtos = produtos.filter(temVolume);
+        if (!produtos.length) return { tipo: "esclarecer", motivo: "volume-nao-bate" };
+      }
+
       // Semanas pedidas: uma ("semana 42", "s42"), lista ("semanas 40, 41 e 42") ou intervalo
       // ("semanas 40 a 42", "entre a semana 40 e a 42", "da 40 até a 42"). Nunca troca o período.
-      const qs = q.replace(/\bs(\d{1,2})\b/g, "semana $1");
+      const qs = q
+        .replace(/\b\d+(?:[.,]\d+)?\s*(?:ml|l)\b/g, " ")
+        .replace(/\bs(\d{1,2})\b/g, "semana $1")
+        .replace(/\b(?:de|da|do|entre)\s+(?:a\s+)?(\d{1,2})\s+(?:a|ate|e)\s+(?:a\s+)?(\d{1,2})\b/g, "semanas $1 a $2");
       const trecho = qs.match(/\bsemanas?\s*(\d{1,2})((?:\s*(?:,|\be\b|\ba\b|\bate\b|-)\s*(?:a\s+)?(?:semanas?\s*)?\d{1,2})*)/);
       let semanasPedidas = null;
       if (trecho) {
         const nums = trecho[0].match(/\d{1,2}/g).map(Number);
         const intervalo = /\ba\b|\bate\b|-/.test(trecho[2]) || (/\bentre\b/.test(qs) && nums.length === 2);
+        // "40 a 41 e 43" mistura intervalo e lista: em vez de escolher um, pergunta.
+        if (intervalo && nums.length > 2) return { tipo: "esclarecer", motivo: "periodo-misturado" };
         semanasPedidas = intervalo
           ? Array.from({ length: Math.max(...nums) - Math.min(...nums) + 1 }, (_, i) => Math.min(...nums) + i)
           : [...new Set(nums)].sort((a, b) => a - b);
@@ -599,6 +638,11 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
         if (fora !== undefined) return { tipo: "semanaFora", semana: fora };
       }
       const ultimasTxt = (q.match(/\bultimas?\s*(\d{1,2})\s*semanas\b/) || [])[1];
+      if (ultimasTxt && (Number(ultimasTxt) < 1 || Number(ultimasTxt) > catalogo.semanas.length)) return { tipo: "esclarecer", motivo: "ultimas-fora" };
+
+      // Número que sobrou ("aurora 42", "em 2025") não vira a semana mais recente sem avisar.
+      const sobra = qs.replace(trecho ? trecho[0] : "", " ").replace(/\bultimas?\s*\d{1,2}\s*semanas\b/g, " ");
+      if (/\d/.test(sobra)) return { tipo: "esclarecer", motivo: "numero-solto" };
 
       const querParado = /\bparad|\bencalh/.test(q);
       const querRuptura = /\bruptura|\bfaltar\b|\bfalta\b/.test(q);
@@ -621,7 +665,7 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
       }
       if (metricas.includes("preco") && metricas.length > 1) return { tipo: "esclarecer", motivo: "preco-misturado" };
 
-      const ultimas = ultimasTxt ? Math.max(1, Math.min(Number(ultimasTxt), catalogo.semanas.length)) : null;
+      const ultimas = ultimasTxt ? Number(ultimasTxt) : null;
       const porSemanaPedido = /por semana|evolucao|compar/.test(q);
       const semanas = semanasPedidas ? semanasPedidas
         : ultimas ? catalogo.semanas.slice(-ultimas)
@@ -688,12 +732,12 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
       { id: "cerrado", nome: "Rede Cerrado", termos: ["cerrado"], codigoProprio: false },
     ],
     produtos: [
-      { ean: "7890000100011", nome: "Chá gelado limão 1,5 L", termos: ["limao"], preco: 8.9 },
-      { ean: "7890000100028", nome: "Chá gelado pêssego 450 ml", termos: ["pessego"], preco: 4.5 },
-      { ean: "7890000100035", nome: "Suco de uva 1 L", termos: ["uva"], preco: 11.9 },
-      { ean: "7890000100042", nome: "Suco de laranja 300 ml", termos: ["laranja"], preco: 4.2 },
-      { ean: "7890000100059", nome: "Água de coco 1 L", termos: ["coco"], preco: 9.8 },
-      { ean: "7890000100066", nome: "Chá verde 1,5 L", termos: ["cha verde", "verde"], preco: 8.4 },
+      { ean: "7890000100011", nome: "Chá gelado limão 1,5 L", termos: ["limao"], familias: ["cha gelado", "gelado", "gelada", "cha", "chas"], preco: 8.9 },
+      { ean: "7890000100028", nome: "Chá gelado pêssego 450 ml", termos: ["pessego"], familias: ["cha gelado", "gelado", "gelada", "cha", "chas"], preco: 4.5 },
+      { ean: "7890000100035", nome: "Suco de uva 1 L", termos: ["uva"], familias: ["suco", "sucos"], preco: 11.9 },
+      { ean: "7890000100042", nome: "Suco de laranja 300 ml", termos: ["laranja"], familias: ["suco", "sucos"], preco: 4.2 },
+      { ean: "7890000100059", nome: "Água de coco 1 L", termos: ["coco"], familias: ["agua"], preco: 9.8 },
+      { ean: "7890000100066", nome: "Chá verde 1,5 L", termos: ["cha verde", "verde"], familias: ["cha", "chas"], preco: 8.4 },
     ],
     semanas: [36, 37, 38, 39, 40, 41, 42, 43],
   };
@@ -791,6 +835,7 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
   const checks = [
     [controle.rejeitados.length || controle.semanasSemSellIn.length ? "bad" : "ok", "Chegada", `<b>${controle.validosSellOut} de ${controle.esperados}</b> semanas de sell-out e <b>${controle.validosSellIn} de ${CATALOGO.semanas.length}</b> de sell-in chegaram e passaram na entrada: rede e semana válidas, unidades inteiras, preço positivo, uma linha por produto e soma igual ao total declarado${controle.rejeitados.length ? `. <b>${controle.rejeitados.length}</b> arquivo(s) rejeitado(s): ${controle.rejeitados.map((x) => `${esc(x.arquivo)} (${x.motivo})`).join("; ")}` : ""}.`],
     ...controle.faltando.map((f) => ["bad", "Faltando", `<b>${redeNome(f.rede)}</b> não enviou a semana ${f.semana}. A semana fica como <b>sem dado</b>, e não como venda zero; o estoque dessa rede para de ser calculado a partir dela, e as recomendações usam até a semana ${f.semana - 1}. Em produção, o fornecedor receberia um aviso.`]),
+    ...controle.estoqueNegativo.map((x) => ["bad", "Estoque", `<b>${redeNome(x.rede)}</b> · ${produtoNome(x.ean)}: a conta da semana ${x.semana} deu estoque negativo (<span class="num">${fmt(x.estoque)}</span>), sinal de dado inconsistente. O estoque fica como <b>sem dado</b> a partir daí.`]),
     ...(reenvio ? [["warn", "Reenvio", `<b>${redeNome(reenvio.rede)}</b> reenviou a semana ${reenvio.semana} com <b>${reenvio.linhasAlteradas} linha corrigida</b>. O arquivo mais recente substitui o anterior inteiro; nada soma duas vezes.`]] : []),
     [codigosSemPar.length ? "warn" : "ok", "De-para", `A ${redeNome("aurora")} usa código próprio. <b>${codigosLigados} códigos</b> estão ligados ao EAN${codigosSemPar.length ? ` e <b>${codigosSemPar.length}</b> (<span class="num">${codigosSemPar.join(", ")}</span>) ainda não tem cadastro: as <b>${rejeitadasSO.length} linhas</b> dele (${fmt(unidadesSemPar)} unidades) ficam fora da base e aparecem aqui. Em produção, abririam um pedido de cadastro.` : "."}`],
     controle.bate
@@ -879,6 +924,12 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
     if (p.tipo === "naoEntendi") return `<p>Não entendi qual dado você precisa. Posso trazer sell-in, sell-out, estoque na rede ou preço, por rede, produto e semana. Tente: <i>"sell-out da Rede Aurora na semana 43 por produto"</i>.</p>`;
     if (p.tipo === "esclarecer") {
       if (p.motivo === "preco-misturado") return `<p>Preço é uma média e não se soma com unidades. Peça o preço separado das outras medidas.</p>`;
+      if (p.motivo === "periodo-misturado") return `<p>Esse período mistura intervalo e lista. Escreva um dos dois: <i>"semanas 40 a 43"</i> ou <i>"semanas 40, 41 e 43"</i>.</p>`;
+      if (p.motivo === "numero-solto") return `<p>Não sei a que esse número se refere, e não vou trocar por outra semana. Para escolher o período, escreva <i>"semana 42"</i> ou <i>"semanas 40 a 42"</i>.</p>`;
+      if (p.motivo === "ultimas-fora") return `<p>A base tem ${CATALOGO.semanas.length} semanas (${CATALOGO.semanas[0]} a ${SEMANA_ATUAL}). Peça entre 1 e ${CATALOGO.semanas.length} últimas semanas.</p>`;
+      if (p.motivo === "rede-incompleta") return `<p>Qual rede? As da base são ${CATALOGO.redes.map((r) => r.nome).join(", ")}.</p>`;
+      if (p.motivo === "exclusao") return `<p>Ainda não faço exclusões ("sem" ou "menos"). Diga as redes ou os produtos que você quer ver.</p>`;
+      if (p.motivo === "volume-sem-produto" || p.motivo === "volume-nao-bate") return `<p>Esse volume não indica um produto da base. Os produtos são: ${CATALOGO.produtos.map((x) => x.nome).join(", ")}.</p>`;
       if (p.motivo === "recs-uma-semana") return `<p>Recomendação é a situação de uma semana. Diga qual semana, por exemplo <i>"ruptura na semana 42"</i>.</p>`;
       return `<p>Qual dado você quer? <b>Sell-in</b> é o que a rede comprou, pelo distribuidor; <b>sell-out</b> é o que a rede vendeu ao consumidor.</p>
         ${opcoes([`${texto} (sell-in)`, `${texto} (sell-out)`, `${texto} (estoque)`, `${texto} (preço)`])}`;
