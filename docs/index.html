@@ -196,15 +196,14 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
 
 <main class="wrap">
   <header class="intro">
-    <span class="eyebrow">Proposta para a área de dados · dados fictícios</span>
+    <span class="eyebrow">Case de estudo · dados fictícios</span>
     <h1>Teia de dados comercial: da chegada do arquivo à recomendação para vendas</h1>
-    <p class="lead">Na conversa sobre a vaga, o gestor da área de dados descreveu o caminho: reunir sell-in, sell-out e preço dos fornecedores numa fonte única, automatizar a rotina que hoje toma quase metade do tempo do time e transformar uma função repetitiva num agente de IA. Esta página mostra, em pequena escala, como eu começaria esse caminho.</p>
+    <p class="lead">Times comerciais recebem, toda semana, arquivos de sell-in e sell-out em formatos diferentes. Quando uma semana não chega e entra como venda zero, a leitura do período sai errada. Este case mostra, em pequena escala, uma carga que confere esses arquivos, a base única que sai dela e o que dá para entregar a partir daí: recomendações para vendas e um agente de pedidos de dados.</p>
     <div class="byline">
-      <span>Diego · candidato à vaga</span>
-      <span>Montado em 29/10/2026</span>
+      <span>Diego · case de estudo</span>
       <a href="https://github.com/diaquinodev" target="_blank" rel="noopener">github.com/diaquinodev</a>
     </div>
-    <p class="note">Todos os números, redes e produtos desta página são fictícios e gerados no próprio navegador. Nenhum dado da empresa foi usado, e nenhum dado comercial sai da página (de fora, ela só carrega as fontes do texto, do Google Fonts). O objetivo é mostrar o raciocínio e a automação, não adivinhar o processo de vocês, que eu desenharia junto com o time antes de escolher ferramentas.</p>
+    <p class="note">Todos os números, redes e produtos desta página são fictícios e gerados no próprio navegador. Nenhum dado comercial sai da página (de fora, ela só carrega as fontes do texto, do Google Fonts). O objetivo é mostrar o raciocínio e a automação. Numa operação real, o desenho seria feito com o time, antes de escolher ferramentas.</p>
     <nav class="atalhos" aria-label="Ir para">
       <a href="#s-conf">Ver a conferência</a>
       <a href="#s-recs">Ver as recomendações</a>
@@ -262,7 +261,7 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
     <div class="head">
       <span class="eyebrow">Etapa 2 · conferência automática</span>
       <h2 id="s-conf">Antes de qualquer número ir para vendas, o código confere a chegada</h2>
-      <p class="muted">Cada quadrado é um arquivo de sell-out esperado por semana. A conferência roda a cada chegada; em produção, ela avisaria o time no canal de vocês antes de publicar.</p>
+      <p class="muted">Cada quadrado é um arquivo de sell-out esperado por semana. A conferência roda a cada chegada. Em produção, ela avisaria o time no canal da área antes de publicar.</p>
     </div>
     <div class="files-wrap" tabindex="0" role="region" aria-label="Arquivos de sell-out por rede e semana"><div class="grid-files" id="files"></div></div>
     <p class="dica-rolagem">Deslize a grade para o lado para ver todas as semanas.</p>
@@ -301,7 +300,7 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
         <button type="submit">Enviar</button>
       </form>
     </div>
-    <p class="small muted">Simulação: aqui o pedido é interpretado por regras no navegador. Na empresa, um modelo de linguagem escolheria entre consultas aprovadas, o SQL seria validado antes de rodar e o acesso seguiria as permissões de cada área.</p>
+    <p class="small muted">Simulação: aqui o pedido é interpretado por regras no navegador. Numa operação real, um modelo de linguagem escolheria entre consultas aprovadas, o SQL seria validado antes de rodar e o acesso seguiria as permissões de cada área.</p>
   </section>
 
   <section aria-labelledby="s-tempo">
@@ -329,7 +328,7 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
 
   <section aria-labelledby="s-plano">
     <div class="head">
-      <span class="eyebrow">Como eu levaria isso para a área</span>
+      <span class="eyebrow">Da demonstração à operação</span>
       <h2 id="s-plano">Primeiro o desenho com o time, depois a ferramenta</h2>
     </div>
     <div class="plan">
@@ -347,13 +346,13 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92re
       </div>
     </div>
     <ul class="limits small muted">
-      <li>Trabalhei com dados de vendas, estoque, ERP e marketplaces no e-commerce. Dados de sell-in e sell-out de bebidas seriam novos para mim, e eu começaria aprendendo com o time.</li>
+      <li>A página cobre a carga conferida, a base única, as recomendações e o agente. Validação pelas áreas, aprovação humana e a medição de acerto ficam para uma operação real.</li>
       <li>As regras desta página têm testes com casos escritos à mão, inclusive os limites de cada regra, além de testes da tela em Chrome, Edge, Firefox e Safari, no computador e no celular.</li>
     </ul>
   </section>
 
   <footer>
-    <span>Diego · proposta enviada para o processo seletivo da área de dados.</span>
+    <span>Diego · case de estudo com dados fictícios.</span>
     <span>Projetos com código e testes: <a href="https://github.com/diaquinodev" target="_blank" rel="noopener">github.com/diaquinodev</a></span>
   </footer>
 </main>

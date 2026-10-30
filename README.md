@@ -1,9 +1,9 @@
 # Teia de Dados Comercial
 
-Prova de conceito com **dados fictícios**: arquivos de sell-in (o que a rede compra, pelo
+Case de estudo com **dados fictícios**: arquivos de sell-in (o que a rede compra, pelo
 distribuidor) e sell-out (o que a rede vende ao consumidor) chegam dos fornecedores, passam por uma carga
 conferida e viram uma base única. Dessa base saem recomendações para vendas e as respostas de um
-agente de pedidos de dados.
+agente de pedidos de dados. Semana sem arquivo aparece como falta, nunca como zero.
 
 **Abrir a demonstração:** https://diaquinodev.github.io/teia-de-dados/ (sem login, sem instalar nada)
 
@@ -13,10 +13,11 @@ agente de pedidos de dados.
 
 ## O problema
 
-Em áreas comerciais, boa parte do tempo vai para juntar arquivos de fontes diferentes, conferir
-se os números batem e responder pedidos repetidos. O risco não é só a demora: uma semana sem
-arquivo tratada como venda zero vira uma decisão errada. Esta demonstração mostra como eu
-começaria a atacar isso, em pequena escala, antes de desenhar a solução real com o time.
+Times comerciais recebem, toda semana, arquivos heterogêneos de sell-in e sell-out. Boa parte do
+tempo vai para juntar essas fontes, conferir se os números batem e responder pedidos repetidos. O
+risco não é só a demora: uma semana sem arquivo tratada como venda zero vira uma decisão errada.
+Este case mostra, em pequena escala, uma forma de atacar isso antes de desenhar a operação real
+com o time.
 
 ## Como funciona
 
@@ -93,7 +94,7 @@ uma frase com palavra nova recebe uma recusa, mesmo quando uma pessoa entenderia
 ## Da demonstração à operação real
 
 Os desenhos abaixo são **hipótese para validar com o time, não um processo já confirmado**. Quem
-aprova o quê depende de como a área funciona, e eu desenharia isso junto com as pessoas antes de
+aprova o quê depende de como a área funciona. O desenho seria feito junto com as pessoas, antes de
 escolher ferramentas.
 
 **A evolução em fases.** Consultas e reports continuam funcionando durante toda a mudança:
