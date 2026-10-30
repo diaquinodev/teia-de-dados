@@ -4,30 +4,29 @@
 Claude Code
 
 ## Branch
-fase-publicacao-github-pages
+fase-2-agente-sem-troca-silenciosa
 
 ## Trilha
 média
 
 ## Plano/fase
-[[plans/teia-de-dados/phase-1-publicacao-github-pages]]
+[[plans/teia-de-dados/phase-2-agente-sem-troca-silenciosa]]
 
 ## Feito
-- página completa em `docs/index.html`, publicável sem o esqueleto do claude.ai
-- testes abrem o arquivo publicado; `TEIA_URL` roda a mesma suíte contra o site no ar
-- README com fluxograma, prints, decisões e limitações
-- repositório público criado com histórico limpo; `historico-privado` fica só no computador local
-- GitHub Pages ligado temporariamente na branch desta fase
+- fase 1 integrada: site no ar, publicado pela `main` `/docs`
+- agente: família de produtos, volume, intervalo sem a palavra semana; número solto, nome pela metade e exclusão viram pergunta
+- carga: estoque negativo aparece na conferência e deixa a carga parcial
+- README: lógica do agente, fluxogramas e matriz de validação; suíte completa verde no arquivo local
 
 ## Falta
-- usuário fazer o merge do PR, sem apagar a branch
-- apontar o Pages para `main` `/docs` e rodar a suíte com `TEIA_URL` de novo
+- usuário fazer o merge do PR
+- rodar a suíte com `TEIA_URL` no site depois do merge
 
 ## Próximo comando
-Depois do merge: `gh api -X PUT repos/diaquinodev/teia-de-dados/pages -f 'source[branch]=main' -f 'source[path]=/docs'`, esperar o build e rodar `TEIA_URL=https://diaquinodev.github.io/teia-de-dados/ npm run test:tela`.
+Depois do merge: esperar o build do Pages e rodar `TEIA_URL=https://diaquinodev.github.io/teia-de-dados/ npm run test:tela`.
 
 ## Bloqueios
 nenhum
 
 ## Atualizado em
-2026-10-30 13:10
+2026-10-30 15:00
