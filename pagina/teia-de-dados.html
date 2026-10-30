@@ -1,0 +1,1001 @@
+<title>Teia de Dados Comercial</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: uma coluna de leitura que segue o caminho do dado — fontes, conferência, base única, recomendações, agente, tempo liberado. */
+:root {
+  --bg: #f2f5f3;
+  --surface: #ffffff;
+  --ink: #12211b;
+  --muted: #55665f;
+  --line: #d5ded9;
+  --accent: #1c6b4c;
+  --accent-soft: #e1efe8;
+  --warn: #85500a;
+  --warn-soft: #f7ecd9;
+  --bad: #b23a2c;
+  --bad-soft: #f6e1dd;
+  --good: #1c6b4c;
+  --code-bg: #e9efec;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1814; --surface: #16221d; --ink: #e4ece8; --muted: #9db0a7; --line: #2a3a33;
+    --accent: #5cc396; --accent-soft: #1c3329; --warn: #e3a547; --warn-soft: #3a2e19;
+    --bad: #ef8a7c; --bad-soft: #3d2320; --good: #5cc396; --code-bg: #1d2b25; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1814; --surface: #16221d; --ink: #e4ece8; --muted: #9db0a7; --line: #2a3a33;
+  --accent: #5cc396; --accent-soft: #1c3329; --warn: #e3a547; --warn-soft: #3a2e19;
+  --bad: #ef8a7c; --bad-soft: #3d2320; --good: #5cc396; --code-bg: #1d2b25; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.55;
+}
+.wrap {
+  max-width: 980px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 64px;
+  display: grid; gap: 56px; grid-template-columns: minmax(0, 1fr);
+}
+.wrap > * { min-width: 0; }
+/* Grade de uma coluna que nunca passa da tela: tabela e SQL rolam por dentro. */
+section, .agent, .msg.bot, .agent-log { grid-template-columns: minmax(0, 1fr); }
+section > *, .agent > *, .msg.bot > * { min-width: 0; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1, h2 { overflow-wrap: break-word; hyphens: auto; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: clamp(1.45rem, 3vw, 1.9rem); font-weight: 700; }
+h3 { font-size: 1.1rem; font-weight: 500; }
+p { margin: 0; max-width: 65ch; }
+a { color: var(--accent); }
+.eyebrow { font-family: var(--font-data); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lead { font-size: 1.15rem; color: var(--muted); }
+section { display: grid; gap: 18px; scroll-margin-top: 16px; }
+.head { display: grid; gap: 8px; }
+.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.small { font-size: 0.9rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Abertura */
+.intro { display: grid; gap: 18px; }
+.byline { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 0.92rem; color: var(--muted); }
+.note {
+  border-left: 3px solid var(--warn); background: var(--warn-soft); padding: 12px 16px; border-radius: 0 6px 6px 0;
+  font-size: 0.95rem; max-width: 70ch;
+}
+.atalhos { display: flex; flex-wrap: wrap; gap: 8px; }
+.atalhos a {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; font-size: 0.92rem;
+}
+.atalhos a:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Fluxo do dado */
+.flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: grid; gap: 6px; align-content: start; position: relative; min-width: 0; }
+.step .tag { font-family: var(--font-data); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.step strong { font-family: var(--font-display); font-weight: 500; font-size: 1.05rem; }
+.step ul { margin: 0; padding-left: 18px; font-size: 0.9rem; color: var(--muted); }
+.step.final { border-color: var(--accent); background: var(--accent-soft); }
+.step:not(:last-child)::after {
+  content: "→"; position: absolute; right: -11px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); font-size: 0.9rem; background: var(--bg); line-height: 1;
+}
+
+/* Conferência */
+.checks { display: grid; gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.check { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 14px; padding: 14px 16px; border-top: 1px solid var(--line); align-items: start; }
+.check:first-child { border-top: 0; }
+.pill { font-family: var(--font-data); font-size: 0.74rem; padding: 3px 8px; border-radius: 999px; text-align: center; white-space: nowrap; }
+.pill.ok { background: var(--accent-soft); color: var(--good); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.check b { font-weight: 600; }
+
+.files-wrap { overflow-x: auto; }
+.dica-rolagem { display: none; font-size: 0.82rem; color: var(--muted); }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-family: var(--font-data); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 500; }
+td.n, th.n { text-align: right; font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.grid-files { display: grid; grid-template-columns: 130px repeat(8, minmax(34px, 1fr)); gap: 4px; min-width: 520px; font-size: 0.8rem; }
+.grid-files .cell { height: 30px; border-radius: 4px; display: grid; place-items: center; font-family: var(--font-data); }
+.cell.ok { background: var(--accent-soft); color: var(--good); }
+.cell.dup { background: var(--warn-soft); color: var(--warn); }
+.cell.miss { background: var(--bad-soft); color: var(--bad); }
+.grid-files .lbl { display: flex; align-items: center; color: var(--muted); }
+.grid-files .wk { text-align: center; color: var(--muted); font-family: var(--font-data); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.85rem; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; background: var(--c); }
+
+/* Recomendações */
+.recs { display: grid; gap: 14px; }
+.rec { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 16px; align-items: center; }
+.rec .what { display: grid; gap: 6px; min-width: 0; }
+.rec .kind { justify-self: start; }
+.rec .act { font-weight: 600; }
+.rec svg { width: 100%; height: auto; display: block; }
+.chart-key { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.78rem; color: var(--muted); font-family: var(--font-data); }
+.bloqueio { border-left: 3px solid var(--bad); background: var(--bad-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; }
+
+/* Agente */
+.agent { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; display: grid; }
+.agent-log { padding: 16px; display: grid; gap: 14px; max-height: 620px; overflow-y: auto; }
+.msg { display: grid; gap: 8px; max-width: 100%; min-width: 0; }
+.msg.user { justify-self: end; background: var(--accent-soft); padding: 10px 14px; border-radius: 10px 10px 2px 10px; max-width: 85%; overflow-wrap: anywhere; }
+.msg.bot { justify-self: start; width: 100%; }
+.msg .who { font-family: var(--font-data); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.understood { display: flex; flex-wrap: wrap; gap: 6px; }
+.understood span { font-family: var(--font-data); font-size: 0.76rem; background: var(--code-bg); padding: 3px 8px; border-radius: 4px; }
+pre.sql { margin: 0; background: var(--code-bg); padding: 10px 12px; border-radius: 6px; font-family: var(--font-data); font-size: 0.8rem; overflow-x: auto; white-space: pre; }
+.result-wrap { overflow-x: auto; }
+.verified { font-size: 0.88rem; color: var(--good); }
+.verified.falhou { color: var(--bad); font-weight: 600; }
+.handoff { font-size: 0.92rem; border-left: 3px solid var(--warn); padding-left: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 12px; }
+.chips button, .opcoes button {
+  font: inherit; font-size: 0.9rem; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+  padding: 8px 14px; min-height: 44px; cursor: pointer; text-align: left; max-width: 100%; overflow-wrap: anywhere;
+}
+.chips button:hover, .opcoes button:hover { border-color: var(--accent); color: var(--accent); }
+.opcoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.agent form { display: flex; gap: 8px; padding: 12px 16px 16px; border-top: 1px solid var(--line); }
+.agent input { flex: 1; min-width: 0; min-height: 44px; font: inherit; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.agent form button { font: inherit; min-height: 44px; padding: 0 16px; background: var(--accent); color: var(--surface); border: 1px solid var(--accent); border-radius: 8px; font-weight: 600; cursor: pointer; }
+button:focus-visible, input:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Tempo */
+.time { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.inputs { display: grid; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+.inputs label { display: grid; grid-template-columns: minmax(0, 1fr) 84px; gap: 12px; align-items: center; font-size: 0.93rem; }
+.inputs input { font-family: var(--font-data); font-size: 0.95rem; padding: 6px 8px; min-height: 40px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); width: 100%; text-align: right; }
+.total { display: grid; gap: 6px; padding: 8px 0; }
+.total .big { font-family: var(--font-display); font-size: clamp(2.6rem, 7vw, 3.6rem); font-weight: 700; color: var(--accent); line-height: 1; }
+.ajuste { font-size: 0.85rem; color: var(--warn); min-height: 1.2em; }
+
+/* Como levar */
+.plan { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; counter-reset: fase; }
+.plan div { border-top: 3px solid var(--accent); padding-top: 10px; display: grid; gap: 6px; align-content: start; }
+.plan h3::before { counter-increment: fase; content: counter(fase) ". "; color: var(--accent); }
+.limits { display: grid; gap: 6px; padding-left: 20px; margin: 0; max-width: 70ch; }
+footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.92rem; color: var(--muted); display: grid; gap: 6px; }
+
+@media (max-width: 760px) {
+  .flow { grid-template-columns: minmax(0, 1fr); }
+  .step:not(:last-child)::after { content: "↓"; right: auto; left: 50%; top: auto; bottom: -13px; transform: translateX(-50%); padding: 0 6px; }
+  .rec { grid-template-columns: minmax(0, 1fr); }
+  .time, .plan { grid-template-columns: minmax(0, 1fr); }
+  .check { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .check .pill { justify-self: start; }
+  .dica-rolagem { display: block; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .msg.new { animation: rise 0.25s ease-out; }
+  @keyframes rise { from { transform: translateY(6px); opacity: 0.4; } to { transform: none; opacity: 1; } }
+  html { scroll-behavior: smooth; }
+}
+</style>
+
+<main class="wrap">
+  <header class="intro">
+    <span class="eyebrow">Proposta para a área de dados · dados fictícios</span>
+    <h1>Teia de dados comercial: da chegada do arquivo à recomendação para vendas</h1>
+    <p class="lead">Na conversa sobre a vaga, o gestor da área de dados descreveu o caminho: reunir sell-in, sell-out e preço dos fornecedores numa fonte única, automatizar a rotina que hoje toma quase metade do tempo do time e transformar uma função repetitiva num agente de IA. Esta página mostra, em pequena escala, como eu começaria esse caminho.</p>
+    <div class="byline">
+      <span>Diego · candidato à vaga</span>
+      <span>Montado em 29/10/2026</span>
+      <a href="https://github.com/diaquinodev" target="_blank" rel="noopener">github.com/diaquinodev</a>
+    </div>
+    <p class="note">Todos os números, redes e produtos desta página são fictícios e gerados no próprio navegador. Nenhum dado da empresa foi usado, e nenhum dado comercial sai da página (de fora, ela só carrega as fontes do texto, do Google Fonts). O objetivo é mostrar o raciocínio e a automação, não adivinhar o processo de vocês, que eu desenharia junto com o time antes de escolher ferramentas.</p>
+    <nav class="atalhos" aria-label="Ir para">
+      <a href="#s-conf">Ver a conferência</a>
+      <a href="#s-recs">Ver as recomendações</a>
+      <a href="#s-agent">Testar o agente</a>
+      <a href="#s-tempo">Calcular o tempo</a>
+    </nav>
+  </header>
+
+  <section aria-labelledby="s-fluxo">
+    <div class="head">
+      <span class="eyebrow">O caminho do dado</span>
+      <h2 id="s-fluxo">Quatro etapas, do arquivo do fornecedor à ação de vendas</h2>
+      <p class="muted">Recomendações e agente leem apenas a base única que saiu da conferência. Arquivo reprovado não entra, o que ficou de fora aparece com o motivo, e uma carga cujos totais não batem bloqueia tudo.</p>
+    </div>
+    <div class="flow">
+      <div class="step">
+        <span class="tag">Fontes</span>
+        <strong>Arquivos dos fornecedores</strong>
+        <ul>
+          <li>Sell-in do distribuidor</li>
+          <li>Sell-out e preço de 3 redes</li>
+          <li>Estoque inicial de cada rede e produto, ponto de partida do estoque</li>
+          <li id="flow-files"></li>
+        </ul>
+      </div>
+      <div class="step">
+        <span class="tag">Conferência</span>
+        <strong>5 testes antes de publicar</strong>
+        <ul>
+          <li>Arquivo faltando, incompleto ou reenviado</li>
+          <li>Código da rede ligado ao EAN</li>
+          <li>Total igual ao declarado no arquivo</li>
+        </ul>
+      </div>
+      <div class="step">
+        <span class="tag">Fonte única</span>
+        <strong>Uma base, um número</strong>
+        <ul>
+          <li>Mesma definição para todos</li>
+          <li>Ausência marcada, nunca zero</li>
+        </ul>
+      </div>
+      <div class="step final">
+        <span class="tag">Uso</span>
+        <strong>Recomendação e agente</strong>
+        <ul>
+          <li>Lista curta para vendas</li>
+          <li>Pedidos de dados respondidos</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-conf">
+    <div class="head">
+      <span class="eyebrow">Etapa 2 · conferência automática</span>
+      <h2 id="s-conf">Antes de qualquer número ir para vendas, o código confere a chegada</h2>
+      <p class="muted">Cada quadrado é um arquivo de sell-out esperado por semana. A conferência roda a cada chegada; em produção, ela avisaria o time no canal de vocês antes de publicar.</p>
+    </div>
+    <div class="files-wrap" tabindex="0" role="region" aria-label="Arquivos de sell-out por rede e semana"><div class="grid-files" id="files"></div></div>
+    <p class="dica-rolagem">Deslize a grade para o lado para ver todas as semanas.</p>
+    <p class="small muted" id="detalhe-arquivo" aria-live="polite">Toque num quadrado para ver o detalhe do arquivo.</p>
+    <div class="legend">
+      <span style="--c: var(--accent-soft)">Recebido e conferido</span>
+      <span style="--c: var(--warn-soft)">Reenviado (vale o mais recente)</span>
+      <span style="--c: var(--bad-soft)">Não chegou</span>
+    </div>
+    <div class="checks" id="checks"></div>
+  </section>
+
+  <section aria-labelledby="s-recs">
+    <div class="head">
+      <span class="eyebrow">Etapa 4 · recomendação para vendas</span>
+      <h2 id="s-recs">O vendedor recebe o que fazer hoje, e não mais um painel</h2>
+      <p class="muted">As regras calculam, sobre a base única, a cobertura de estoque na rede, a tendência de sell-out e o preço contra a média das outras redes. Só entra na lista o que pede ação.</p>
+    </div>
+    <div class="chart-key"><span>── sell-out</span><span>- - sell-in</span><span>unidades por semana</span><span>barras: preço por rede</span></div>
+    <div class="recs" id="recs"></div>
+    <p class="small muted">Aqui o texto é montado por regra. Com IA, o modelo só redigiria a frase; os números continuariam vindo do cálculo, conferidos antes de sair. Os dados são por rede: a decisão loja a loja precisaria do sell-out por loja.</p>
+  </section>
+
+  <section aria-labelledby="s-agent">
+    <div class="head">
+      <span class="eyebrow">Agente de pedidos de dados</span>
+      <h2 id="s-agent">Pedidos das outras áreas respondidos sem tirar o analista do que está fazendo</h2>
+      <p class="muted">Experimente um pedido pronto ou escreva o seu. O agente mostra o que entendeu, a consulta que rodou na base única e a conferência do resultado. O que ele não reconhece, ele pergunta; o que foge do padrão, ele não responde.</p>
+    </div>
+    <div class="agent">
+      <div class="agent-log" id="log" aria-live="polite" tabindex="0" role="log" aria-label="Conversa com o agente"></div>
+      <div class="chips" id="chips" role="group" aria-label="Pedidos de exemplo"></div>
+      <form id="ask">
+        <label for="q" class="sr-only">Escreva um pedido de dados</label>
+        <input id="q" name="q" autocomplete="off" maxlength="200" placeholder="Ex.: sell-out da Rede Cerrado na semana 42 por produto">
+        <button type="submit">Enviar</button>
+      </form>
+    </div>
+    <p class="small muted">Simulação: aqui o pedido é interpretado por regras no navegador. Na empresa, um modelo de linguagem escolheria entre consultas aprovadas, o SQL seria validado antes de rodar e o acesso seguiria as permissões de cada área.</p>
+  </section>
+
+  <section aria-labelledby="s-tempo">
+    <div class="head">
+      <span class="eyebrow">Tempo liberado</span>
+      <h2 id="s-tempo">Quanto da rotina manual isso devolve ao time</h2>
+      <p class="muted">Os valores abaixo são hipóteses para discutir com o time, não medições. Mude os números e o total recalcula.</p>
+    </div>
+    <div class="time">
+      <div class="inputs">
+        <label for="t-arq">Minutos para conferir um arquivo à mão <input id="t-arq" type="number" inputmode="numeric" min="0" max="999" value="15"></label>
+        <label for="t-narq">Arquivos por semana <input id="t-narq" type="number" inputmode="numeric" min="0" max="999" value="4"></label>
+        <label for="t-rep">Horas por semana montando o report de vendas <input id="t-rep" type="number" inputmode="decimal" min="0" max="999" step="0.5" value="3"></label>
+        <label for="t-ped">Pedidos de dados de outras áreas por semana <input id="t-ped" type="number" inputmode="numeric" min="0" max="999" value="12"></label>
+        <label for="t-mped">Minutos por pedido <input id="t-mped" type="number" inputmode="numeric" min="0" max="999" value="20"></label>
+        <p class="ajuste" id="t-ajuste" aria-live="polite"></p>
+      </div>
+      <div class="total">
+        <span class="eyebrow">Por mês, com 4,3 semanas</span>
+        <span class="big num" id="t-total"></span>
+        <p class="muted" id="t-detail"></p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-plano">
+    <div class="head">
+      <span class="eyebrow">Como eu levaria isso para a área</span>
+      <h2 id="s-plano">Primeiro o desenho com o time, depois a ferramenta</h2>
+    </div>
+    <div class="plan">
+      <div>
+        <h3>Mapear</h3>
+        <p class="small">Inventário das tarefas do time com frequência e horas, e das fontes de cada fornecedor com formato e prazo. Dá a lista do que automatizar primeiro.</p>
+      </div>
+      <div>
+        <h3>Conferir e unificar</h3>
+        <p class="small">Testes de chegada e de totais na carga, dicionário de indicadores e de-para de produtos, junto com a TI no lake único.</p>
+      </div>
+      <div>
+        <h3>Automatizar e delegar</h3>
+        <p class="small">Report e recomendações gerados sozinhos, e o primeiro agente em modo assistido: ele prepara, uma pessoa confere e aprova, medindo acerto e tempo.</p>
+      </div>
+    </div>
+    <ul class="limits small muted">
+      <li>Trabalhei com dados de vendas, estoque, ERP e marketplaces no e-commerce. Dados de sell-in e sell-out de bebidas seriam novos para mim, e eu começaria aprendendo com o time.</li>
+      <li>As regras desta página têm testes com casos escritos à mão, inclusive os limites de cada regra, além de testes da tela em Chrome, Edge, Firefox e Safari, no computador e no celular.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <span>Diego · proposta enviada para o processo seletivo da área de dados.</span>
+    <span>Projetos com código e testes: <a href="https://github.com/diaquinodev" target="_blank" rel="noopener">github.com/diaquinodev</a></span>
+  </footer>
+</main>
+
+<script>
+(() => {
+  document.documentElement.lang = "pt-BR";
+
+  // <teia-logica> Regras de negócio em funções puras: sem tela, testadas fora da página.
+  const Teia = (() => {
+    // Limites comparados em pontos-base (1% = 100), sem erro de arredondamento:
+    // 9,90 contra 9,00 é exatamente 10% e não pode passar por "acima de 10%".
+    const bp = (x) => Math.round(x * 10000);
+    const norm = (t) => String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+    /**
+     * Carga: arquivos como chegaram → base única.
+     * Na entrada, cada arquivo passa por: rede e semana do catálogo, unidades inteiras ≥ 0,
+     * preço > 0, soma das linhas igual ao total declarado e nenhum produto repetido (o
+     * fornecedor manda uma linha por produto). Falhou em qualquer uma: o arquivo inteiro é
+     * rejeitado com o motivo, e o fornecedor teria de reenviar. Entre os válidos, o mais recente
+     * da rede e semana substitui o anterior inteiro; dois com a mesma hora e conteúdo diferente
+     * deixam a semana sem dado. Código sem de-para fica fora da base e é listado. Estoque só
+     * existe enquanto todas as semanas anteriores têm sell-in e sell-out.
+     */
+    function carregar({ catalogo, sellOut, sellIn, depara, estoqueInicial }) {
+      const { redes, produtos, semanas } = catalogo;
+      const ehRede = Object.fromEntries(redes.map((r) => [r.id, r]));
+      const ehEan = new Set(produtos.map((p) => p.ean));
+      const ehSemana = new Set(semanas);
+      const unidadeValida = (n) => Number.isInteger(n) && n >= 0;
+      const eanSO = (f, produto) => (ehRede[f.rede]?.codigoProprio ? depara[produto] : ehEan.has(produto) ? produto : undefined);
+
+      const rejeitados = [];
+      const cabecalho = (f) => {
+        if (!ehSemana.has(f.semana)) return "semana fora do período";
+        if (!Number.isFinite(f.recebidoEm)) return "hora de chegada inválida";
+        if (!Array.isArray(f.linhas) || !unidadeValida(f.totalDeclarado)) return "cabeçalho inválido";
+        if (f.linhas.some((l) => !unidadeValida(l.unidades))) return "unidades inválidas";
+        if (f.linhas.reduce((n, l) => n + l.unidades, 0) !== f.totalDeclarado) return "soma diferente do total declarado";
+        return null;
+      };
+      const repetido = (chaves) => new Set(chaves).size !== chaves.length;
+      // Linha ausente pode ser venda zero ou falha de extração: sem o fornecedor dizer qual,
+      // o arquivo sem algum produto esperado é rejeitado e lista o que faltou.
+      const ausentes = (presentes, esperados) => esperados.filter((k) => !presentes.has(k));
+      const motivoSO = (f) => {
+        if (!ehRede[f.rede]) return "rede fora do cadastro";
+        const m = cabecalho(f);
+        if (m) return m;
+        if (f.linhas.some((l) => typeof l.produto !== "string" || !(Number.isFinite(l.preco) && l.preco > 0))) return "preço inválido";
+        // Dois códigos que levam ao mesmo EAN também são produto repetido.
+        if (repetido(f.linhas.map((l) => eanSO(f, l.produto) ?? `sem-cadastro:${l.produto}`))) return "produto repetido no arquivo";
+        const faltam = ausentes(new Set(f.linhas.map((l) => eanSO(f, l.produto))), produtos.map((p) => p.ean));
+        if (faltam.length) return `produto esperado ausente: ${faltam.join(", ")}`;
+        return null;
+      };
+      const motivoSI = (f) => {
+        const m = cabecalho(f);
+        if (m) return m;
+        if (repetido(f.linhas.map((l) => `${l.rede}|${l.ean}`))) return "produto repetido no arquivo";
+        const faltam = ausentes(new Set(f.linhas.map((l) => `${l.rede}|${l.ean}`)), redes.flatMap((r) => produtos.map((p) => `${r.id}|${p.ean}`)));
+        if (faltam.length) return `produto esperado ausente: ${faltam.join(", ")}`;
+        return null;
+      };
+      const filtrar = (lista, motivo, fonte) => lista.filter((f) => {
+        const m = motivo(f);
+        if (m) rejeitados.push({ fonte, arquivo: f.id, rede: f.rede ?? null, semana: f.semana, motivo: m });
+        return !m;
+      });
+      const mesmoConteudo = (a, b) => JSON.stringify(a.linhas) === JSON.stringify(b.linhas);
+      const maisRecente = (lista, chave) => {
+        const m = new Map(), substituidos = [], empates = new Set();
+        for (const f of [...lista].sort((a, b) => a.recebidoEm - b.recebidoEm)) {
+          const k = chave(f), atual = m.get(k);
+          if (atual && atual.recebidoEm === f.recebidoEm) { if (!mesmoConteudo(atual, f)) empates.add(k); }
+          else if (atual) { empates.delete(k); substituidos.push({ anterior: atual, novo: f }); }
+          m.set(k, f);
+        }
+        for (const k of empates) m.delete(k);
+        return { vencedores: m, substituidos, empates: [...empates] };
+      };
+      const so = maisRecente(filtrar(sellOut, motivoSO, "sellOut"), (f) => `${f.rede}|${f.semana}`);
+      const si = maisRecente(filtrar(sellIn, motivoSI, "sellIn"), (f) => `${f.semana}`);
+
+      const celulas = new Map(); // rede|ean|semana → { sellOut, preco }
+      const semCadastro = [];
+      for (const f of so.vencedores.values()) {
+        for (const l of f.linhas) {
+          const ean = eanSO(f, l.produto);
+          if (!ean) { semCadastro.push({ fonte: "sellOut", arquivo: f.id, rede: f.rede, semana: f.semana, produto: l.produto, unidades: l.unidades }); continue; }
+          celulas.set(`${f.rede}|${ean}|${f.semana}`, { sellOut: l.unidades, preco: l.preco });
+        }
+      }
+      const entradas = new Map(); // rede|ean|semana → sell-in
+      for (const f of si.vencedores.values()) {
+        for (const l of f.linhas) {
+          if (!ehRede[l.rede] || !ehEan.has(l.ean)) { semCadastro.push({ fonte: "sellIn", arquivo: f.id, rede: l.rede, semana: f.semana, produto: l.ean, unidades: l.unidades }); continue; }
+          entradas.set(`${l.rede}|${l.ean}|${f.semana}`, l.unidades);
+        }
+      }
+
+      const base = [];
+      for (const r of redes) {
+        for (const p of produtos) {
+          let estoque = estoqueInicial[`${r.id}|${p.ean}`] ?? null;
+          for (const w of semanas) {
+            const k = `${r.id}|${p.ean}|${w}`;
+            const c = celulas.get(k);
+            const sellIn = entradas.has(k) ? entradas.get(k) : null;
+            const sellOutW = c ? c.sellOut : null;
+            estoque = estoque === null || sellIn === null || sellOutW === null ? null : estoque + sellIn - sellOutW;
+            if (estoque !== null && estoque < 0) estoque = null; // estoque negativo = dado inconsistente
+            base.push({ rede: r.id, ean: p.ean, semana: w, sellIn, sellOut: sellOutW, preco: c ? c.preco : null, estoque });
+          }
+        }
+      }
+
+      // Segundo caminho, para sell-out e sell-in: o total que cada arquivo declara no
+      // cabeçalho, menos as linhas sem cadastro, tem de dar a soma da base.
+      const somaBase = (campo) => base.reduce((n, r) => n + (r[campo] ?? 0), 0);
+      const declarado = (venc) => [...venc.values()].reduce((n, f) => n + f.totalDeclarado, 0);
+      const foraDaBase = (fonte) => semCadastro.filter((x) => x.fonte === fonte).reduce((n, x) => n + x.unidades, 0);
+      const totalBase = somaBase("sellOut"), totalBaseSellIn = somaBase("sellIn");
+      const totalDeclarado = declarado(so.vencedores), totalDeclaradoSellIn = declarado(si.vencedores);
+      const totalControle = totalDeclarado - foraDaBase("sellOut");
+      const totalControleSellIn = totalDeclaradoSellIn - foraDaBase("sellIn");
+      const faltando = [];
+      for (const r of redes) for (const w of semanas) if (!so.vencedores.has(`${r.id}|${w}`)) faltando.push({ rede: r.id, semana: w });
+      const semanasSemSellIn = semanas.filter((w) => !si.vencedores.has(`${w}`));
+      const empates = [...so.empates.map((k) => ({ fonte: "sellOut", chave: k })), ...si.empates.map((k) => ({ fonte: "sellIn", chave: k }))];
+      const bate = totalBase === totalControle && totalBaseSellIn === totalControleSellIn;
+      const lacunas = faltando.length + semanasSemSellIn.length + rejeitados.length + semCadastro.length + empates.length;
+
+      return {
+        base,
+        controle: {
+          // aprovada: tudo chegou e confere; parcial: confere, mas há lacunas listadas (o que
+          // foi aprovado segue, o resto aparece com motivo); bloqueada: os totais não batem e
+          // nada sai. Com a validação de entrada atual, "bloqueada" é uma guarda contra erro
+          // de programa, não um caso que um arquivo de fornecedor consiga provocar.
+          status: !bate ? "bloqueada" : lacunas ? "parcial" : "aprovada",
+          bate,
+          esperados: redes.length * semanas.length,
+          recebidosSellOut: sellOut.length, validosSellOut: so.vencedores.size,
+          recebidosSellIn: sellIn.length, validosSellIn: si.vencedores.size,
+          faltando, semanasSemSellIn, rejeitados, empates, semCadastro,
+          substituidos: so.substituidos.map(({ anterior, novo }) => ({
+            rede: novo.rede, semana: novo.semana,
+            linhasAlteradas: novo.linhas.filter((l) => !anterior.linhas.some((a) => a.produto === l.produto && a.unidades === l.unidades)).length,
+          })),
+          totalBase, totalDeclarado, totalControle, totalBaseSellIn, totalDeclaradoSellIn, totalControleSellIn,
+        },
+      };
+    }
+
+    /**
+     * Recomendações sobre a base única, olhando a base até a semana pedida.
+     * Cobertura = estoque da última semana com dado ÷ média do sell-out das 2 últimas semanas com dado.
+     * Tendência = sell-out da última semana com dado contra o da semana 4 semanas antes (se existir).
+     * Ruptura: cobertura abaixo de 1 semana. Estoque parado: cobertura acima de 3 semanas e queda
+     * maior que 10%, ou estoque sem nenhuma venda nas 2 últimas semanas.
+     * Preço: só redes com dado na semana pedida; mais de 10% acima da média das outras.
+     * O que não dá para avaliar sai em naoAvaliados: "sem alerta" nunca esconde "sem dado".
+     */
+    function recomendar(base, { catalogo, semanaAtual }) {
+      const ate = base.filter((x) => x.semana <= semanaAtual);
+      const recs = [], naoAvaliados = [];
+      for (const r of catalogo.redes) {
+        for (const p of catalogo.produtos) {
+          const serie = ate.filter((x) => x.rede === r.id && x.ean === p.ean && x.sellOut !== null).sort((a, b) => a.semana - b.semana);
+          if (serie.length < 2) { naoAvaliados.push({ rede: r.id, ean: p.ean, motivo: "menos de 2 semanas com sell-out" }); continue; }
+          const ult = serie.at(-1), pen = serie.at(-2);
+          if (ult.estoque === null) { naoAvaliados.push({ rede: r.id, ean: p.ean, motivo: "estoque desconhecido" }); continue; }
+          const media2 = (ult.sellOut + pen.sellOut) / 2;
+          const ref = serie.find((x) => x.semana === ult.semana - 4);
+          const tendencia = ref && ref.sellOut > 0 ? ult.sellOut / ref.sellOut - 1 : null;
+          const comum = { rede: r.id, ean: p.ean, semana: ult.semana, atrasada: ult.semana < semanaAtual, estoque: ult.estoque, tendencia };
+          if (media2 === 0) {
+            if (ult.estoque > 0) recs.push({ ...comum, tipo: "parado", semVenda: true, cobertura: null });
+            continue;
+          }
+          const cobertura = ult.estoque / media2;
+          if (bp(cobertura) < 10000) recs.push({ ...comum, tipo: "ruptura", cobertura });
+          else if (bp(cobertura) > 30000 && tendencia !== null && bp(tendencia) < -1000) recs.push({ ...comum, tipo: "parado", cobertura });
+        }
+      }
+      for (const p of catalogo.produtos) {
+        const precos = catalogo.redes
+          .map((r) => ({ rede: r.id, preco: ate.find((x) => x.rede === r.id && x.ean === p.ean && x.semana === semanaAtual)?.preco ?? null }))
+          .filter((x) => x.preco !== null);
+        if (precos.length < 2) { naoAvaliados.push({ rede: null, ean: p.ean, motivo: "preço: menos de 2 redes com preço na semana" }); continue; }
+        for (const { rede, preco } of precos) {
+          const outros = precos.filter((x) => x.rede !== rede);
+          const media = outros.reduce((n, x) => n + x.preco, 0) / outros.length;
+          const acima = preco / media - 1;
+          if (bp(acima) > 1000) recs.push({ rede, ean: p.ean, semana: semanaAtual, tipo: "preco", preco, media, acima, precos });
+        }
+      }
+      const ordem = { ruptura: 0, parado: 1, preco: 2 };
+      recs.sort((a, b) => ordem[a.tipo] - ordem[b.tipo] || (a.cobertura ?? 99) - (b.cobertura ?? 99));
+      return { recomendacoes: recs, naoAvaliados };
+    }
+
+    // Palavras que o agente entende. Qualquer outra palavra é tratada como nome que ele não conhece.
+    const VOCABULARIO = new Set((
+      "a o as os um uma uns umas de da do das dos na no nas nos em para pra pro com sem e ou que qual quais quanto quanta quantos quantas " +
+      "me mim eu voce nos manda mande mandar mostra mostre mostrar ver veja quero queria preciso passa passe passar traz traga trazer " +
+      "foi foram esta estao estava tem tinha teve ha hoje atual agora ultima ultimas ultimo ultimos semana semanas sem s " +
+      "por produto produtos sku skus item itens rede redes todas todos toda todo total totais geral lista listar entre " +
+      "compare comparar comparando comparativo compara evolucao dados dado numero numeros relatorio base unica favor ola oi bom dia tarde " +
+      "sell in out sell-in sell-out sellin sellout venda vendas vendeu vendido vendidos vende consumidor distribuidor " +
+      "estoque estoques cobertura preco precos gondola medio media " +
+      "parado parados encalhado encalhados ruptura rupturas risco faltar falta recomendacao recomendacoes recomenda fazer acima caro caros cara " +
+      "outra outras outro outros mais menos maior menor cada so apenas tambem ainda ate desde periodo " +
+      "suco sucos cha chas agua gelado gelada l ml"
+    ).split(/\s+/));
+    const FORA = /concorr|salario|cpf|cliente final|margem|lucro|senha|faturamento|comissao/;
+
+    /** Lê o pedido e decide o que fazer. Nunca transforma nome desconhecido em "todos". */
+    function interpretar(texto, catalogo) {
+      const q = norm(texto).trim();
+      if (!q) return { tipo: "vazio" };
+      if (FORA.test(q)) return { tipo: "fora" };
+      const redes = catalogo.redes.filter((r) => r.termos.some((t) => new RegExp(`\\b${t}\\b`).test(q))).map((r) => r.id);
+      const produtos = catalogo.produtos.filter((p) => p.termos.some((t) => new RegExp(`\\b${t}\\b`).test(q))).map((p) => p.ean);
+      const conhecidas = new Set([...VOCABULARIO, ...catalogo.redes.flatMap((r) => r.termos.join(" ").split(" ")), ...catalogo.produtos.flatMap((p) => p.termos.join(" ").split(" "))]);
+      const desconhecidas = [...new Set(q.split(/[^a-z0-9-]+/).filter((t) => t && !conhecidas.has(t) && !/^\d+([,.]\d+)?$/.test(t) && !/^s\d{1,2}$/.test(t)))];
+      if (desconhecidas.length) return { tipo: "desconhecido", termos: desconhecidas };
+
+      // Semanas pedidas: uma ("semana 42", "s42"), lista ("semanas 40, 41 e 42") ou intervalo
+      // ("semanas 40 a 42", "entre a semana 40 e a 42", "da 40 até a 42"). Nunca troca o período.
+      const qs = q.replace(/\bs(\d{1,2})\b/g, "semana $1");
+      const trecho = qs.match(/\bsemanas?\s*(\d{1,2})((?:\s*(?:,|\be\b|\ba\b|\bate\b|-)\s*(?:a\s+)?(?:semanas?\s*)?\d{1,2})*)/);
+      let semanasPedidas = null;
+      if (trecho) {
+        const nums = trecho[0].match(/\d{1,2}/g).map(Number);
+        const intervalo = /\ba\b|\bate\b|-/.test(trecho[2]) || (/\bentre\b/.test(qs) && nums.length === 2);
+        semanasPedidas = intervalo
+          ? Array.from({ length: Math.max(...nums) - Math.min(...nums) + 1 }, (_, i) => Math.min(...nums) + i)
+          : [...new Set(nums)].sort((a, b) => a - b);
+        const fora = semanasPedidas.find((w) => !catalogo.semanas.includes(w));
+        if (fora !== undefined) return { tipo: "semanaFora", semana: fora };
+      }
+      const ultimasTxt = (q.match(/\bultimas?\s*(\d{1,2})\s*semanas\b/) || [])[1];
+
+      const querParado = /\bparad|\bencalh/.test(q);
+      const querRuptura = /\bruptura|\bfaltar\b|\bfalta\b/.test(q);
+      const querPreco = /\bacima\b|\bcar[oa]s?\b/.test(q) && /\bpreco/.test(q);
+      if (querParado || querRuptura || querPreco || /recomend|o que fazer/.test(q)) {
+        // Recomendação é a foto de uma semana: período com várias semanas pede uma só.
+        if ((semanasPedidas && semanasPedidas.length > 1) || ultimasTxt) return { tipo: "esclarecer", motivo: "recs-uma-semana" };
+        const tipos = [querRuptura && "ruptura", querParado && "parado", querPreco && "preco"].filter(Boolean);
+        return { tipo: "recs", tipos: tipos.length ? tipos : ["ruptura", "parado", "preco"], redes, produtos, semana: semanasPedidas ? semanasPedidas[0] : catalogo.semanas.at(-1) };
+      }
+
+      const metricas = [];
+      if (/\bsell[- ]?in\b|\bsellin\b/.test(q)) metricas.push("sellIn");
+      if (/\bsell[- ]?out\b|\bsellout\b|\bconsumidor\b/.test(q)) metricas.push("sellOut");
+      if (/\bestoques?\b|\bcobertura\b/.test(q)) metricas.push("estoque");
+      if (/\bprecos?\b|\bgondola\b/.test(q)) metricas.push("preco");
+      if (metricas.length === 0) {
+        if (/\bvend/.test(q) || redes.length || produtos.length || semanasPedidas) return { tipo: "esclarecer" };
+        return { tipo: "naoEntendi" };
+      }
+      if (metricas.includes("preco") && metricas.length > 1) return { tipo: "esclarecer", motivo: "preco-misturado" };
+
+      const ultimas = ultimasTxt ? Math.max(1, Math.min(Number(ultimasTxt), catalogo.semanas.length)) : null;
+      const porSemanaPedido = /por semana|evolucao|compar/.test(q);
+      const semanas = semanasPedidas ? semanasPedidas
+        : ultimas ? catalogo.semanas.slice(-ultimas)
+        : porSemanaPedido ? catalogo.semanas.slice(-4)
+        : [catalogo.semanas.at(-1)];
+      const porProduto = /por (produto|sku|item)/.test(q) || metricas.includes("preco") || produtos.length > 0 || redes.length === 1;
+      return { tipo: "consulta", metricas, redes, produtos, semanas, porSemana: semanas.length > 1, porRede: redes.length !== 1, porProduto };
+    }
+
+    /**
+     * Consulta na base única. Soma para sell-in, sell-out e estoque; média para preço.
+     * Grupo com alguma semana sem dado fica "sem dado" inteiro, nunca vira zero.
+     * Consistência entre cálculo e tabela: soma direta das linhas (somas) ou média refeita por
+     * grupo (preço). É uma guarda contra erro de agrupamento, não uma fonte independente.
+     */
+    function consultar(base, pedido) {
+      const sel = base.filter((r) => (!pedido.redes.length || pedido.redes.includes(r.rede)) && (!pedido.produtos.length || pedido.produtos.includes(r.ean)) && pedido.semanas.includes(r.semana));
+      const chaveDe = (r) => [pedido.porSemana ? r.semana : null, pedido.porRede ? r.rede : null, pedido.porProduto ? r.ean : null];
+      const grupos = new Map();
+      for (const r of sel) {
+        const k = chaveDe(r).join("|");
+        if (!grupos.has(k)) grupos.set(k, { chave: chaveDe(r), linhas: [] });
+        grupos.get(k).linhas.push(r);
+      }
+      const valor = (linhas, m) => {
+        if (linhas.some((r) => r[m] === null)) return null;
+        return m === "preco" ? linhas.reduce((n, r) => n + r.preco, 0) / linhas.length : linhas.reduce((n, r) => n + r[m], 0);
+      };
+      // Mesma ordem do ORDER BY mostrado: semana primeiro; rede e produto na ordem do catálogo.
+      const tabela = [...grupos.values()]
+        .sort((x, y) => (x.chave[0] ?? 0) - (y.chave[0] ?? 0))
+        .map((g) => ({ chave: g.chave, valores: pedido.metricas.map((m) => valor(g.linhas, m)) }));
+
+      const conferencia = pedido.metricas.map((m, i) => {
+        if (m === "preco") {
+          const ok = tabela.every((t) => {
+            const [semana, rede, ean] = t.chave;
+            const linhas = base.filter((r) => (semana === null || r.semana === semana) && (rede === null ? (!pedido.redes.length || pedido.redes.includes(r.rede)) : r.rede === rede) && (ean === null ? (!pedido.produtos.length || pedido.produtos.includes(r.ean)) : r.ean === ean) && pedido.semanas.includes(r.semana));
+            const precos = linhas.map((r) => r.preco);
+            const refeito = precos.some((p) => p === null) ? null : precos.reduce((n, p) => n + p, 0) / precos.length;
+            return refeito === null ? t.valores[i] === null : t.valores[i] !== null && bp(refeito) === bp(t.valores[i]);
+          });
+          return { metrica: m, ok, tipo: "media" };
+        }
+        const daTabela = tabela.reduce((n, t) => n + (t.valores[i] ?? 0), 0);
+        const semDado = new Set(tabela.filter((t) => t.valores[i] === null).map((t) => t.chave.join("|")));
+        const direto = sel.filter((r) => !semDado.has(chaveDe(r).join("|"))).reduce((n, r) => n + r[m], 0);
+        return { metrica: m, ok: daTabela === direto, tipo: "soma", total: daTabela, direto };
+      });
+      return { tabela, conferencia, semDado: tabela.some((t) => t.valores.some((v) => v === null)) };
+    }
+
+    return Object.freeze({ carregar, recomendar, interpretar, consultar, norm, bp });
+  })();
+  // </teia-logica>
+
+  // Fornecedores fictícios: geram os arquivos como chegariam. Daqui em diante, tudo vem da carga.
+  let seed = 20261029;
+  const rnd = () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const CATALOGO = {
+    redes: [
+      { id: "aurora", nome: "Rede Aurora", termos: ["aurora"], codigoProprio: true },
+      { id: "boapraca", nome: "Rede Boa Praça", termos: ["boa praca", "boapraca"], codigoProprio: false },
+      { id: "cerrado", nome: "Rede Cerrado", termos: ["cerrado"], codigoProprio: false },
+    ],
+    produtos: [
+      { ean: "7890000100011", nome: "Chá gelado limão 1,5 L", termos: ["limao"], preco: 8.9 },
+      { ean: "7890000100028", nome: "Chá gelado pêssego 450 ml", termos: ["pessego"], preco: 4.5 },
+      { ean: "7890000100035", nome: "Suco de uva 1 L", termos: ["uva"], preco: 11.9 },
+      { ean: "7890000100042", nome: "Suco de laranja 300 ml", termos: ["laranja"], preco: 4.2 },
+      { ean: "7890000100059", nome: "Água de coco 1 L", termos: ["coco"], preco: 9.8 },
+      { ean: "7890000100066", nome: "Chá verde 1,5 L", termos: ["cha verde", "verde"], preco: 8.4 },
+    ],
+    semanas: [36, 37, 38, 39, 40, 41, 42, 43],
+  };
+  const SEMANA_ATUAL = CATALOGO.semanas.at(-1);
+  const CODIGO_AURORA = Object.fromEntries(CATALOGO.produtos.map((p, i) => [p.ean, `AUR-${String(i + 1).padStart(4, "0")}`]));
+  const DEPARA = Object.fromEntries(CATALOGO.produtos.map((p) => [CODIGO_AURORA[p.ean], p.ean]));
+  const FALTA = { rede: "cerrado", semana: 43 };
+  const REENVIO = { rede: "boapraca", semana: 42, ean: "7890000100011", correcao: 40 };
+  const CODIGO_NOVO = { codigo: "AUR-0007", semanas: [42, 43], unidades: [64, 71], preco: 7.5 };
+
+  const sellOutArq = [], sellInArq = [], estoqueInicial = {};
+  const sellInPorSemana = new Map(CATALOGO.semanas.map((w) => [w, []]));
+  let chegada = 0;
+  for (const r of CATALOGO.redes) {
+    for (const p of CATALOGO.produtos) {
+      const base = 300 + Math.round(rnd() * 600);
+      estoqueInicial[`${r.id}|${p.ean}`] = base * 2;
+      const fatorPreco = r.id === "aurora" && p.termos[0] === "coco" ? 1.14 : 0.97 + rnd() * 0.06;
+      CATALOGO.semanas.forEach((w, i) => {
+        const cauda = Math.max(0, i - 3);
+        let saida = base * (0.93 + rnd() * 0.14);
+        let entrada = base * (0.94 + rnd() * 0.12);
+        if (r.id === "aurora" && p.termos[0] === "pessego") saida = base * (1 - 0.09 * cauda) * (0.98 + rnd() * 0.04);
+        if (r.id === "boapraca" && p.termos[0] === "uva") { saida = base * (1 + 0.13 * cauda) * (0.98 + rnd() * 0.04); entrada = base * (0.97 + rnd() * 0.04); }
+        sellInPorSemana.get(w).push({ rede: r.id, ean: p.ean, unidades: Math.round(entrada) });
+        p[`_${r.id}_${w}`] = { unidades: Math.round(saida), preco: +(p.preco * fatorPreco).toFixed(2) };
+      });
+    }
+  }
+  for (const r of CATALOGO.redes) {
+    for (const w of CATALOGO.semanas) {
+      if (r.id === FALTA.rede && w === FALTA.semana) continue;
+      const linhas = CATALOGO.produtos.map((p) => ({ produto: r.codigoProprio ? CODIGO_AURORA[p.ean] : p.ean, ...p[`_${r.id}_${w}`] }));
+      const n = CODIGO_NOVO.semanas.indexOf(w);
+      if (r.codigoProprio && n >= 0) linhas.push({ produto: CODIGO_NOVO.codigo, unidades: CODIGO_NOVO.unidades[n], preco: CODIGO_NOVO.preco });
+      // O primeiro envio da Boa Praça na semana 42 veio com o limão errado; o reenvio corrige.
+      const errado = r.id === REENVIO.rede && w === REENVIO.semana;
+      const primeiro = errado ? linhas.map((l) => (l.produto === REENVIO.ean ? { ...l, unidades: l.unidades - REENVIO.correcao } : l)) : linhas;
+      const arquivo = (ls, sufixo) => ({ id: `SO-${r.id}-${w}${sufixo}`, rede: r.id, semana: w, recebidoEm: ++chegada, totalDeclarado: ls.reduce((s, l) => s + l.unidades, 0), linhas: ls });
+      sellOutArq.push(arquivo(primeiro, ""));
+      if (errado) sellOutArq.push(arquivo(linhas, "-reenvio"));
+    }
+  }
+  for (const [w, linhas] of sellInPorSemana) sellInArq.push({ id: `SI-${w}`, semana: w, recebidoEm: ++chegada, totalDeclarado: linhas.reduce((s, l) => s + l.unidades, 0), linhas });
+  for (const p of CATALOGO.produtos) for (const k of Object.keys(p)) if (k.startsWith("_")) delete p[k];
+
+  const carga = Teia.carregar({ catalogo: CATALOGO, sellOut: sellOutArq, sellIn: sellInArq, depara: DEPARA, estoqueInicial });
+  const { base, controle } = carga;
+  const avaliar = (semana) => (controle.bate ? Teia.recomendar(base, { catalogo: CATALOGO, semanaAtual: semana }) : { recomendacoes: [], naoAvaliados: [] });
+  const avaliacao = avaliar(SEMANA_ATUAL);
+  const recs = avaliacao.recomendacoes;
+
+  // Formatação e nomes
+  const fmt = (n) => Math.round(n).toLocaleString("pt-BR");
+  const brl = (n) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const pct = (n) => `${n > 0 ? "+" : ""}${Math.round(n * 100)}%`;
+  const dec = (n) => n.toFixed(1).replace(".", ",");
+  const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const redeNome = (id) => CATALOGO.redes.find((r) => r.id === id).nome;
+  const produtoNome = (ean) => CATALOGO.produtos.find((p) => p.ean === ean).nome;
+
+  // Etapa 2: chegada dos arquivos
+  const files = document.getElementById("files");
+  const detalhe = document.getElementById("detalhe-arquivo");
+  const add = (cls, text, rotulo) => {
+    const d = document.createElement("div");
+    d.className = cls; d.textContent = text;
+    if (rotulo) {
+      // Toque, clique ou foco mostram o detalhe por escrito: no celular não existe "passar o mouse".
+      d.title = rotulo; d.tabIndex = 0;
+      d.setAttribute("role", "img"); d.setAttribute("aria-label", rotulo);
+      const mostrar = () => { detalhe.textContent = rotulo; };
+      d.addEventListener("click", mostrar);
+      d.addEventListener("focus", mostrar);
+    }
+    files.append(d);
+  };
+  add("lbl", "");
+  CATALOGO.semanas.forEach((w) => add("wk", `S${w}`));
+  for (const r of CATALOGO.redes) {
+    add("lbl", r.nome);
+    for (const w of CATALOGO.semanas) {
+      if (controle.faltando.some((f) => f.rede === r.id && f.semana === w)) add("cell miss", "—", `${r.nome}, semana ${w}: não chegou`);
+      else if (controle.substituidos.some((s) => s.rede === r.id && s.semana === w)) add("cell dup", "2×", `${r.nome}, semana ${w}: reenviado, vale o arquivo mais recente`);
+      else add("cell ok", "✓", `${r.nome}, semana ${w}: recebido e conferido`);
+    }
+  }
+  document.getElementById("flow-files").textContent = `${controle.esperados + CATALOGO.semanas.length} arquivos esperados em ${CATALOGO.semanas.length} semanas`;
+
+  const rejeitadasSO = controle.semCadastro.filter((x) => x.fonte === "sellOut");
+  const codigosSemPar = [...new Set(rejeitadasSO.map((x) => x.produto))];
+  const unidadesSemPar = rejeitadasSO.reduce((n, x) => n + x.unidades, 0);
+  const codigosLigados = Object.keys(DEPARA).length;
+  const reenvio = controle.substituidos[0];
+  const checks = [
+    [controle.rejeitados.length || controle.semanasSemSellIn.length ? "bad" : "ok", "Chegada", `<b>${controle.validosSellOut} de ${controle.esperados}</b> semanas de sell-out e <b>${controle.validosSellIn} de ${CATALOGO.semanas.length}</b> de sell-in chegaram e passaram na entrada: rede e semana válidas, unidades inteiras, preço positivo, uma linha por produto e soma igual ao total declarado${controle.rejeitados.length ? `. <b>${controle.rejeitados.length}</b> arquivo(s) rejeitado(s): ${controle.rejeitados.map((x) => `${esc(x.arquivo)} (${x.motivo})`).join("; ")}` : ""}.`],
+    ...controle.faltando.map((f) => ["bad", "Faltando", `<b>${redeNome(f.rede)}</b> não enviou a semana ${f.semana}. A semana fica como <b>sem dado</b>, e não como venda zero; o estoque dessa rede para de ser calculado a partir dela, e as recomendações usam até a semana ${f.semana - 1}. Em produção, o fornecedor receberia um aviso.`]),
+    ...(reenvio ? [["warn", "Reenvio", `<b>${redeNome(reenvio.rede)}</b> reenviou a semana ${reenvio.semana} com <b>${reenvio.linhasAlteradas} linha corrigida</b>. O arquivo mais recente substitui o anterior inteiro; nada soma duas vezes.`]] : []),
+    [codigosSemPar.length ? "warn" : "ok", "De-para", `A ${redeNome("aurora")} usa código próprio. <b>${codigosLigados} códigos</b> estão ligados ao EAN${codigosSemPar.length ? ` e <b>${codigosSemPar.length}</b> (<span class="num">${codigosSemPar.join(", ")}</span>) ainda não tem cadastro: as <b>${rejeitadasSO.length} linhas</b> dele (${fmt(unidadesSemPar)} unidades) ficam fora da base e aparecem aqui. Em produção, abririam um pedido de cadastro.` : "."}`],
+    controle.bate
+      ? ["ok", "Total", `Base única: <b class="num">${fmt(controle.totalBase)}</b> unidades de sell-out. Pelo cabeçalho dos arquivos: <span class="num">${fmt(controle.totalDeclarado)}</span> declaradas, menos <span class="num">${fmt(controle.totalDeclarado - controle.totalControle)}</span> sem cadastro, dá o mesmo número. O sell-in confere do mesmo jeito: <span class="num">${fmt(controle.totalBaseSellIn)}</span> unidades.`]
+      : ["bad", "Total", `A base soma <b class="num">${fmt(controle.totalBase)}</b> de sell-out e <b class="num">${fmt(controle.totalBaseSellIn)}</b> de sell-in; o cabeçalho dos arquivos indica <b class="num">${fmt(controle.totalControle)}</b> e <b class="num">${fmt(controle.totalControleSellIn)}</b>. A carga fica bloqueada e nada vai para vendas até alguém revisar.`],
+  ];
+  document.getElementById("checks").innerHTML = checks.map(([k, label, text]) => `<div class="check"><span class="pill ${k}">${label}</span><p>${text}</p></div>`).join("");
+
+  // Etapa 4: recomendações, sempre a partir da base única
+  const serieDe = (rede, ean) => base.filter((x) => x.rede === rede && x.ean === ean && x.sellOut !== null);
+  const spark = (sr) => {
+    const W = 240, H = 92, pad = { l: 34, r: 8, t: 8, b: 18 };
+    const vals = sr.flatMap((x) => [x.sellIn ?? x.sellOut, x.sellOut]);
+    const lo = Math.min(...vals) * 0.9, hi = Math.max(...vals) * 1.05;
+    const X = (i) => pad.l + (i / (sr.length - 1)) * (W - pad.l - pad.r);
+    const Y = (v) => pad.t + (1 - (v - lo) / (hi - lo)) * (H - pad.t - pad.b);
+    const line = (k) => sr.filter((x) => x[k] !== null).map((x, i) => `${i ? "L" : "M"}${X(sr.indexOf(x)).toFixed(1)} ${Y(x[k]).toFixed(1)}`).join("");
+    const ult = sr.length - 1;
+    const mono = 'font-size="9" fill="var(--muted)" font-family="IBM Plex Mono, monospace"';
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Sell-in e sell-out por semana, da semana ${sr[0].semana} à ${sr[ult].semana}">
+      <line x1="${pad.l}" x2="${W - pad.r}" y1="${Y(lo)}" y2="${Y(lo)}" stroke="var(--line)"/>
+      <text x="${pad.l - 4}" y="${Y(hi) + 4}" text-anchor="end" ${mono}>${fmt(hi)}</text>
+      <text x="${pad.l - 4}" y="${Y(lo)}" text-anchor="end" ${mono}>${fmt(lo)}</text>
+      <text x="${X(0)}" y="${H - 4}" ${mono}>S${sr[0].semana}</text>
+      <text x="${X(ult)}" y="${H - 4}" text-anchor="end" ${mono}>S${sr[ult].semana}</text>
+      <path d="${line("sellIn")}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <path d="${line("sellOut")}" fill="none" stroke="var(--accent)" stroke-width="2"/>
+      <circle cx="${X(ult)}" cy="${Y(sr[ult].sellOut)}" r="3" fill="var(--accent)"/>
+    </svg>`;
+  };
+  const bars = (precos, destaque) => {
+    const W = 240, H = 24 * precos.length + 4, max = Math.max(...precos.map((x) => x.preco));
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Preço por rede na semana ${SEMANA_ATUAL}">${precos.map((x, i) => {
+      const y = 4 + i * 24, w = (x.preco / max) * 110;
+      return `<text x="0" y="${y + 12}" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono, monospace">${redeNome(x.rede).replace("Rede ", "")}</text>
+        <rect x="74" y="${y + 3}" width="${w.toFixed(1)}" height="12" rx="2" fill="${x.rede === destaque ? "var(--warn)" : "var(--line)"}"/>
+        <text x="${(78 + w).toFixed(1)}" y="${y + 12}" font-size="10" fill="var(--ink)" font-family="IBM Plex Mono, monospace">${brl(x.preco)}</text>`;
+    }).join("")}</svg>`;
+  };
+  const ROTULO = { ruptura: "Risco de ruptura", parado: "Estoque parado no canal", preco: "Preço acima das outras redes" };
+  const textoRec = (x) => {
+    const ate = x.atrasada ? ` Dados até a semana ${x.semana}: a ${SEMANA_ATUAL} não chegou.` : "";
+    if (x.tipo === "ruptura") return {
+      fato: `O estoque na rede cobre ${dec(x.cobertura)} semana de venda${x.tendencia !== null && x.tendencia > 0.05 ? `, com sell-out em ${pct(x.tendencia)} nas últimas 4 semanas` : ""}.${ate}`,
+      acao: "Antecipar o próximo pedido com o distribuidor." };
+    if (x.tipo === "parado") return {
+      fato: x.semVenda ? `Nenhuma venda nas 2 últimas semanas com dado e ${fmt(x.estoque)} unidades em estoque na rede.${ate}` : `Sell-out em ${pct(x.tendencia)} nas últimas 4 semanas e cerca de ${dec(x.cobertura)} semanas de estoque na rede.${ate}`,
+      acao: "Segurar novos pedidos e levantar com a rede onde o estoque está, antes de uma ação de giro." };
+    return {
+      fato: `Preço na gôndola de ${brl(x.preco)} na semana ${x.semana}, ${pct(x.acima)} acima da média das outras redes com dado nessa semana (${brl(x.media)}).`,
+      acao: "Levar o comparativo para a negociação com a rede." };
+  };
+  // "Sem alerta" só vale para o que foi avaliado; o resto aparece com o motivo.
+  const naoAvaliadosHtml = (lista) => lista.length
+    ? `<p class="handoff">${lista.length} combinação(ões) de rede e produto não puderam ser avaliadas: ${lista.map((x) => `${x.rede ? redeNome(x.rede) : "todas as redes"} · ${produtoNome(x.ean)} (${x.motivo})`).join("; ")}.</p>`
+    : "";
+  const recsEl = document.getElementById("recs");
+  recsEl.innerHTML = !controle.bate
+    ? `<p class="bloqueio">Carga bloqueada pela conferência: nenhuma recomendação sai até a diferença ser revisada.</p>`
+    : recs.length === 0
+      ? `<p class="muted">${avaliacao.naoAvaliados.length ? "Entre as combinações avaliadas, nenhuma" : "Nenhuma"} situação pede ação nesta semana.</p>${naoAvaliadosHtml(avaliacao.naoAvaliados)}`
+      : naoAvaliadosHtml(avaliacao.naoAvaliados) + recs.map((x) => {
+          const t = textoRec(x);
+          return `<article class="rec"><div class="what">
+            <span class="pill ${x.tipo === "ruptura" ? "bad" : "warn"} kind">${ROTULO[x.tipo]}</span>
+            <h3>${redeNome(x.rede)} · ${produtoNome(x.ean)}</h3>
+            <p class="small">${t.fato}</p>
+            <p class="act">${t.acao}</p>
+          </div>${x.tipo === "preco" ? bars(x.precos, x.rede) : spark(serieDe(x.rede, x.ean))}</article>`;
+        }).join("");
+
+  // Agente de pedidos de dados
+  const log = document.getElementById("log");
+  const NOME_METRICA = { sellIn: "sell-in", sellOut: "sell-out", estoque: "estoque na rede", preco: "preço médio" };
+  const COLUNA_SQL = { sellIn: "SUM(sell_in) AS sell_in", sellOut: "SUM(sell_out) AS sell_out", estoque: "SUM(estoque) AS estoque", preco: "AVG(preco) AS preco_medio" };
+  const opcoes = (lista) => `<div class="opcoes">${lista.map((o) => `<button type="button" data-ask="${esc(o)}">${esc(o)}</button>`).join("")}</div>`;
+  const tabelaHtml = (cab, linhas) => `<div class="result-wrap" tabindex="0" role="region" aria-label="Resultado da consulta"><table><thead><tr>${cab.map(([t, n]) => `<th${n ? ' class="n"' : ""}>${t}</th>`).join("")}</tr></thead><tbody>${linhas.map((l) => `<tr>${l.map(([v, n]) => `<td${n ? ' class="n"' : ""}>${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+
+  function responder(texto) {
+    if (!controle.bate) return `<p class="bloqueio">A carga desta semana está bloqueada pela conferência. Não respondo com números até a diferença ser revisada.</p>`;
+    const p = Teia.interpretar(texto, CATALOGO);
+    if (p.tipo === "vazio") return "";
+    if (p.tipo === "fora") return `<p class="handoff">Esse pedido está fora das consultas aprovadas para o agente (dado financeiro, pessoal ou de concorrência). Em produção, ele seria encaminhado a um analista do time com o pedido original. Nesta demonstração, nada foi enviado.</p>`;
+    if (p.tipo === "desconhecido") return `<p>Não reconheço ${p.termos.map((t) => `"${esc(t)}"`).join(", ")}. Para não responder sobre a coisa errada, só consulto o que existe na base: redes ${CATALOGO.redes.map((r) => r.nome).join(", ")}; produtos ${CATALOGO.produtos.map((x) => x.nome).join(", ")}; semanas ${CATALOGO.semanas[0]} a ${SEMANA_ATUAL}.</p>`;
+    if (p.tipo === "semanaFora") return `<p>A base tem as semanas ${CATALOGO.semanas[0]} a ${SEMANA_ATUAL}. A semana ${p.semana} não está nela.</p>`;
+    if (p.tipo === "naoEntendi") return `<p>Não entendi qual dado você precisa. Posso trazer sell-in, sell-out, estoque na rede ou preço, por rede, produto e semana. Tente: <i>"sell-out da Rede Aurora na semana 43 por produto"</i>.</p>`;
+    if (p.tipo === "esclarecer") {
+      if (p.motivo === "preco-misturado") return `<p>Preço é uma média e não se soma com unidades. Peça o preço separado das outras medidas.</p>`;
+      if (p.motivo === "recs-uma-semana") return `<p>Recomendação é a situação de uma semana. Diga qual semana, por exemplo <i>"ruptura na semana 42"</i>.</p>`;
+      return `<p>Qual dado você quer? <b>Sell-in</b> é o que a rede comprou, pelo distribuidor; <b>sell-out</b> é o que a rede vendeu ao consumidor.</p>
+        ${opcoes([`${texto} (sell-in)`, `${texto} (sell-out)`, `${texto} (estoque)`, `${texto} (preço)`])}`;
+    }
+    if (p.tipo === "recs") {
+      // A semana pedida recalcula a situação daquela semana; nunca reaproveita a lista de hoje.
+      const daSemana = p.semana === SEMANA_ATUAL ? avaliacao : avaliar(p.semana);
+      const filtra = (x) => (!p.redes.length || x.rede === null || p.redes.includes(x.rede)) && (!p.produtos.length || p.produtos.includes(x.ean));
+      const lista = daSemana.recomendacoes.filter((x) => p.tipos.includes(x.tipo) && filtra(x));
+      const semAvaliar = daSemana.naoAvaliados.filter(filtra);
+      const assunto = p.tipos.length === 3 ? "recomendações" : p.tipos.map((t) => ROTULO[t].toLowerCase()).join(" e ");
+      const filtros = [`semana: ${p.semana}`, p.redes.length ? `redes: ${p.redes.map(redeNome).join(", ")}` : null, p.produtos.length ? `produto: ${p.produtos.map(produtoNome).join(", ")}` : null].filter(Boolean);
+      const cab = `<div class="understood"><span>pedido: ${assunto}</span>${filtros.map((f) => `<span>${f}</span>`).join("")}</div>`;
+      if (!lista.length) return `${cab}<p>${semAvaliar.length ? "Entre as combinações avaliadas, nenhuma" : "Nenhuma"} situação desse tipo na semana ${p.semana}.</p>${naoAvaliadosHtml(semAvaliar)}`;
+      return `${cab}${tabelaHtml([["Rede"], ["Produto"], ["Situação"], ["Semana do dado", true]], lista.map((x) => [[redeNome(x.rede)], [produtoNome(x.ean)], [ROTULO[x.tipo]], [`S${x.semana}`, true]]))}
+        ${naoAvaliadosHtml(semAvaliar)}
+        <p class="verified">Mesma regra das recomendações de vendas, calculada da base única até a semana ${p.semana}.</p>`;
+    }
+
+    const r = Teia.consultar(base, p);
+    // Semanas salteadas ("40, 42 e 43") viram IN (...); só intervalo sem buraco vira BETWEEN.
+    const continuas = p.semanas.every((w, i) => i === 0 || w === p.semanas[i - 1] + 1);
+    const cab = [p.porSemana && ["Semana"], p.porRede && ["Rede"], p.porProduto && ["Produto"]].filter(Boolean);
+    const linhas = r.tabela.map((t) => {
+      const [semana, rede, ean] = t.chave;
+      return [p.porSemana && [`S${semana}`], p.porRede && [redeNome(rede)], p.porProduto && [produtoNome(ean)], ...t.valores.map((v, i) => [v === null ? "sem dado" : p.metricas[i] === "preco" ? brl(v) : fmt(v), true])].filter(Boolean);
+    });
+    const entendi = [
+      `dado: ${p.metricas.map((m) => NOME_METRICA[m]).join(" e ")}`,
+      `semanas: ${p.semanas.length === 1 ? p.semanas[0] : continuas ? `${p.semanas[0]} a ${p.semanas.at(-1)}` : p.semanas.join(", ")}`,
+      `redes: ${p.redes.length ? p.redes.map(redeNome).join(", ") : "todas"}`,
+      p.produtos.length ? `produto: ${p.produtos.map(produtoNome).join(", ")}` : null,
+    ].filter(Boolean);
+    const gcols = [p.porSemana && "semana", p.porRede && "rede", p.porProduto && "produto"].filter(Boolean);
+    const where = [
+      p.semanas.length === 1 ? `semana = ${p.semanas[0]}` : continuas ? `semana BETWEEN ${p.semanas[0]} AND ${p.semanas.at(-1)}` : `semana IN (${p.semanas.join(", ")})`,
+      p.redes.length ? `rede IN (${p.redes.map((x) => `'${redeNome(x)}'`).join(", ")})` : null,
+      p.produtos.length ? `ean IN (${p.produtos.map((x) => `'${x}'`).join(", ")})` : null,
+    ].filter(Boolean);
+    const sql = `SELECT ${[...gcols, ...p.metricas.map((m) => COLUNA_SQL[m])].join(", ")}\nFROM base_unica.vendas_semana\nWHERE ${where.join("\n  AND ")}${gcols.length ? `\nGROUP BY ${gcols.join(", ")}\nORDER BY ${gcols.join(", ")}` : ""};`;
+    const avisos = controle.faltando.filter((f) => (!p.redes.length || p.redes.includes(f.rede)) && p.semanas.includes(f.semana) && p.metricas.some((m) => m !== "sellIn"))
+      .map((f) => `${redeNome(f.rede)} não enviou a semana ${f.semana}: ela aparece como <b>sem dado</b>, nunca como zero.`);
+    const todasSemDado = r.tabela.length > 0 && r.tabela.every((t) => t.valores.every((v) => v === null));
+    const falhou = r.conferencia.filter((c) => !c.ok);
+    const conf = falhou.length
+      ? `<p class="verified falhou">A conferência não bateu (${falhou.map((c) => NOME_METRICA[c.metrica]).join(", ")}). Não use estes números antes de revisar.</p>`
+      : todasSemDado
+        ? `<p class="verified">Nenhum número para mostrar: a semana pedida não chegou. A última semana recebida dessa rede é a ${SEMANA_ATUAL - 1}.</p>`
+        : `<p class="verified">Consistência conferida: ${r.conferencia.map((c) => c.tipo === "media" ? "cada preço médio foi refeito direto da base e deu o mesmo valor" : `o total de ${NOME_METRICA[c.metrica]} da tabela (${fmt(c.total)}) é igual à soma direta das linhas da base`).join("; ")}.${r.semDado && !todasSemDado ? " As semanas sem dado ficaram fora da soma." : ""}</p>`;
+    return `<div class="understood">${entendi.map((t) => `<span>${t}</span>`).join("")}</div>
+      <pre class="sql">${esc(sql)}</pre>
+      ${tabelaHtml([...cab, ...p.metricas.map((m) => [NOME_METRICA[m], true])], linhas)}
+      ${avisos.map((a) => `<p class="handoff">${a}</p>`).join("")}
+      ${conf}`;
+  }
+
+  const dizer = (quem, html) => {
+    const d = document.createElement("div");
+    d.className = `msg ${quem} new`;
+    d.innerHTML = `<span class="who">${quem === "user" ? "Pedido" : "Agente"}</span>${html}`;
+    log.append(d);
+    log.scrollTop = log.scrollHeight;
+  };
+  function perguntar(texto) {
+    const t = String(texto).trim().slice(0, 200);
+    if (!t) return;
+    dizer("user", `<p>${esc(t)}</p>`);
+    dizer("bot", responder(t));
+  }
+  const EXEMPLOS = [
+    "Sell-out da Rede Aurora na semana 43, por produto",
+    "Compare sell-in e sell-out do suco de uva nas últimas 4 semanas",
+    "Sell-out da Rede Cerrado na semana 43",
+    "Quais redes estão com estoque parado?",
+    "Preço da água de coco por rede",
+    "Vendas da Rede Boa Praça",
+    "Me manda os preços da concorrência",
+  ];
+  const chips = document.getElementById("chips");
+  for (const e of EXEMPLOS) {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = e;
+    b.addEventListener("click", () => perguntar(e));
+    chips.append(b);
+  }
+  log.addEventListener("click", (ev) => {
+    const b = ev.target instanceof Element ? ev.target.closest("button[data-ask]") : null;
+    if (b) perguntar(b.getAttribute("data-ask"));
+  });
+  document.getElementById("ask").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const input = document.getElementById("q");
+    perguntar(input.value);
+    input.value = "";
+  });
+  perguntar(EXEMPLOS[0]);
+
+  // Tempo liberado: o valor mostrado no campo é sempre o valor usado na conta.
+  const ids = ["t-arq", "t-narq", "t-rep", "t-ped", "t-mped"];
+  const ajuste = document.getElementById("t-ajuste");
+  const lerCampo = (id, corrigir) => {
+    const el = document.getElementById(id);
+    const bruto = Number(el.value);
+    const v = Number.isFinite(bruto) && el.value !== "" ? Math.min(999, Math.max(0, bruto)) : 0;
+    if (corrigir && String(v) !== el.value) { el.value = String(v); return { v, mudou: true }; }
+    return { v, mudou: false };
+  };
+  const calc = (corrigir) => {
+    const lidos = ids.map((id) => lerCampo(id, corrigir));
+    if (corrigir) ajuste.textContent = lidos.some((x) => x.mudou) ? "Valor ajustado: cada campo aceita de 0 a 999." : "";
+    const [arq, narq, rep, ped, mped] = lidos.map((x) => x.v);
+    const h = { conferencia: (arq * narq) / 60, report: rep, pedidos: (ped * mped) / 60 };
+    const mes = (x) => (x * 4.3).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+    document.getElementById("t-total").textContent = `${mes(h.conferencia + h.report + h.pedidos)} h`;
+    document.getElementById("t-detail").textContent = `Conferência ${mes(h.conferencia)} h, report ${mes(h.report)} h e pedidos ${mes(h.pedidos)} h. Parte disso sempre fica com uma pessoa para revisar.`;
+  };
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    el.addEventListener("input", () => calc(false));
+    el.addEventListener("change", () => calc(true));
+  });
+  calc(true);
+
+  // Para os testes de tela (somente leitura): a página expõe a lógica e o que mostrou.
+  window.Teia = Teia;
+  window.__teia = Object.freeze({ catalogo: CATALOGO, base, controle, recs, naoAvaliados: avaliacao.naoAvaliados, arquivos: { sellOut: sellOutArq, sellIn: sellInArq }, depara: DEPARA, estoqueInicial });
+})();
+</script>

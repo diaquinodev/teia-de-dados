@@ -1,0 +1,15 @@
+{
+  "name": "teia-de-dados",
+  "private": true,
+  "description": "Demonstração com dados fictícios: carga conferida de sell-in e sell-out, recomendações para vendas e agente de pedidos de dados.",
+  "scripts": {
+    "test": "npm run test:regras && npm run test:mutantes && npm run test:tela",
+    "test:regras": "node --test testes/regras.test.cjs",
+    "test:mutantes": "node testes/mutantes.cjs",
+    "test:tela": "node testes/tela.cjs"
+  },
+  "devDependencies": {
+    "axe-core": "^4.10.2",
+    "playwright-core": "^1.64.1"
+  }
+}
