@@ -21,7 +21,8 @@ const br = (n) => Math.round(n).toLocaleString("pt-BR");
 
 // Abre o arquivo publicado como está: o que o teste vê é o que o GitHub Pages serve.
 const PAGINA = process.env.TEIA_HTML || path.join(RAIZ, "docs", "index.html");
-const URL = "file:///" + PAGINA.replace(/\\/g, "/");
+// TEIA_URL roda a mesma suíte contra o site no ar.
+const URL = process.env.TEIA_URL || "file:///" + PAGINA.replace(/\\/g, "/");
 const TELAS = path.join(__dirname, "telas");
 fs.mkdirSync(TELAS, { recursive: true });
 
@@ -46,7 +47,7 @@ async function abrir(browser, alvo, tema) {
   p.on("console", (m) => m.type() === "error" && erros.push(m.text()));
   p.on("request", (r) => {
     const u = r.url();
-    if (!u.startsWith("file:") && !u.startsWith("data:") && !/^https:\/\/fonts\.(googleapis|gstatic)\.com\//.test(u)) externos.push(u);
+    if (!u.startsWith("file:") && !u.startsWith("data:") && !(process.env.TEIA_URL && u.startsWith(process.env.TEIA_URL)) && !/^https:\/\/fonts\.(googleapis|gstatic)\.com\//.test(u)) externos.push(u);
   });
   await p.goto(URL);
   await p.waitForLoadState("networkidle").catch(() => {});

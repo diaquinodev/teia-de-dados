@@ -14,20 +14,20 @@ média
 
 ## Feito
 - página completa em `docs/index.html`, publicável sem o esqueleto do claude.ai
-- testes abrem o arquivo publicado e travam charset, viewport e modo padrão
-- README com fluxograma, prints, decisões e limitações; suíte completa verde
-- `main` local com histórico limpo (sem `revisoes/` e sem o nome da empresa); histórico antigo em `historico-privado`, que nunca deve ser enviado
+- testes abrem o arquivo publicado; `TEIA_URL` roda a mesma suíte contra o site no ar
+- README com fluxograma, prints, decisões e limitações
+- repositório público criado com histórico limpo; `historico-privado` fica só no computador local
+- GitHub Pages ligado temporariamente na branch desta fase
 
 ## Falta
-- criar o repositório público, enviar só `main` e esta branch, abrir PR draft
-- ligar o GitHub Pages, conferir a URL real, usuário faz o merge
-- apontar o Pages para `main` `/docs` e conferir de novo
+- usuário fazer o merge do PR, sem apagar a branch
+- apontar o Pages para `main` `/docs` e rodar a suíte com `TEIA_URL` de novo
 
 ## Próximo comando
-Com a autorização do usuário: `gh repo create diaquinodev/teia-de-dados --public --source . --remote origin`, depois `git push origin main fase-publicacao-github-pages`. Nunca usar `--all`.
+Depois do merge: `gh api -X PUT repos/diaquinodev/teia-de-dados/pages -f 'source[branch]=main' -f 'source[path]=/docs'`, esperar o build e rodar `TEIA_URL=https://diaquinodev.github.io/teia-de-dados/ npm run test:tela`.
 
 ## Bloqueios
-Criar o repositório público foi barrado pelas permissões do Claude Code; espera a autorização do usuário.
+nenhum
 
 ## Atualizado em
-2026-10-30 12:30
+2026-10-30 13:10

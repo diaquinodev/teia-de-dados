@@ -76,6 +76,8 @@ npm test
 `test:tela` usa o Chrome e o Edge instalados no Windows e o Firefox e o WebKit do Playwright
 (`npx playwright-core install firefox webkit`).
 
+Para rodar os testes de tela contra o site no ar: `TEIA_URL=https://diaquinodev.github.io/teia-de-dados/ npm run test:tela`.
+
 ## Regras
 
 1. Semana sem arquivo válido = "sem dado", nunca zero.
