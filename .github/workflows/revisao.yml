@@ -1,7 +1,7 @@
 name: revisao
 
-# Verde só com revisão de um agente diferente do autor (ou do CodeRabbit, ou autorrevisão
-# declarada). Regra e formato do cabeçalho: scripts/revisao-check.
+# Verde só com revisão, do commit atual, de um agente diferente do autor (ou do CodeRabbit
+# sem pendências). Regra e formato do cabeçalho: scripts/revisao-check.
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened, ready_for_review]
@@ -28,7 +28,9 @@ jobs:
         run: |
           gh api "repos/$REPO/pulls/$PR" --jq '.body // ""' > corpo.txt
           gh api "repos/$REPO/pulls/$PR/reviews?per_page=100" \
-            --jq '[.[] | {login: .user.login, body: (.body // ""), tipo: "review"}]' > revisoes.json
+            --jq '[.[] | {login: .user.login, body: (.body // ""), tipo: "review", commit_id: .commit_id}]' > revisoes.json
 
       - name: conferir revisão cruzada
-        run: python3 scripts/revisao-check --corpo corpo.txt --revisoes revisoes.json
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 scripts/revisao-check --corpo corpo.txt --revisoes revisoes.json --head "$HEAD_SHA"
