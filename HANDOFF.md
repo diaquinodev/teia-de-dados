@@ -4,30 +4,27 @@
 Claude Code
 
 ## Branch
-fase-2-agente-sem-troca-silenciosa
+qg/padrao-do-kit
 
 ## Trilha
-média
+rápida
 
 ## Plano/fase
-No QG (repositório privado): `brain/plans/teia-de-dados/phase-2-agente-sem-troca-silenciosa.md`
+sem plano: padrão do kit do QG (fase 13 do workflow-multiagente no QG)
 
 ## Feito
-- fase 1 integrada: site no ar, publicado pela `main` `/docs`
-- agente: família de produtos, volume, intervalo sem a palavra semana; número solto, nome pela metade e exclusão viram pergunta
-- carga: estoque negativo aparece na conferência e deixa a carga parcial
-- revisão do CodeRabbit aplicada: exclusão de volume, volume que derrubava nome citado, período misturado, mutantes sem sintaxe válida
-- README: lógica do agente, fluxogramas e matriz de validação; suíte completa verde no arquivo local
+- fases 1 e 2 integradas (PRs #1, #2 e #3)
+- revisão do Codex (Revise) tratada: check exige commit atual, veredito estrito, autorrevisão vermelha, CodeRabbit sem pendências
+- camada comum do kit: AGENTS.md, CI (regras + mutantes), varredura de segredos, check de revisão cruzada
 
 ## Falta
-- usuário fazer o merge do PR
-- rodar a suíte com `TEIA_URL` no site depois do merge
+- teste de tela no CI (caminhos do Chrome/Edge são do Windows)
 
 ## Próximo comando
-Depois do merge: esperar o build do Pages e rodar `TEIA_URL=https://diaquinodev.github.io/teia-de-dados/ npm run test:tela`.
+usuário faz o merge do PR #4 depois do check revisao-cruzada verde
 
 ## Bloqueios
 nenhum
 
 ## Atualizado em
-2026-10-30 15:00
+2026-11-03 12:00
