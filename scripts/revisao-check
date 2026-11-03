@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+"""revisao-check — o PR só fica verde com revisão de alguém que não foi o autor.
+
+Uso: python3 revisao-check --corpo corpo.txt --revisoes revisoes.json
+
+corpo.txt     descrição do PR; precisa da linha "Autor: <Claude Code | Codex | Gemini>"
+revisoes.json revisões do PR, em ordem: [{"login": "...", "body": "...", "tipo": "review"}]
+
+Verde (saída 0) quando a revisão mais recente com cabeçalho
+    Revisão por <agente> · autor <agente> · veredito: <Accept | Accept with notes | Revise>
+vem de um agente diferente do autor e não pede correções; ou quando o CodeRabbit publicou
+uma revisão; ou quando a revisão declara "autorrevisão" (sem outro agente com crédito).
+Regras: AGENTS.md do QG, seção "Fluxo de Pull Requests".
+"""
+
+import argparse
+import json
+import re
+import sys
+
+AGENTES = ("claude", "codex", "gemini")
+AUTOR = re.compile(r"^\s*\**Autor:?\**\s*:?\s*(.+)$", re.IGNORECASE | re.MULTILINE)
+CABECALHO = re.compile(
+    r"Revis[ãa]o por\s+(?P<revisor>.+?)\s*[·→|-]\s*(?P<autor>autorrevis[ãa]o|autor\s+.+?)"
+    r"\s*[·→|-]\s*veredito:\s*\**(?P<veredito>[A-Za-z ]+)",
+    re.IGNORECASE,
+)
+
+
+def agente(texto: str) -> str | None:
+    """Primeiro nome de agente conhecido no texto ("Claude Code" -> "claude")."""
+    for palavra in re.findall(r"[a-zà-ú]+", texto.lower()):
+        if palavra in AGENTES:
+            return palavra
+    return None
+
+
+def avaliar(corpo: str, revisoes: list[dict]) -> tuple[bool, str]:
+    m = AUTOR.search(corpo or "")
+    autor = agente(m[1]) if m else None
+    if not autor:
+        return False, 'a descrição do PR precisa da linha "Autor: Claude Code", "Autor: Codex" ou "Autor: Gemini"'
+
+    if any(r.get("login") == "coderabbitai[bot]" and r.get("tipo") == "review" for r in revisoes):
+        return True, "revisão do CodeRabbit publicada"
+
+    ultima = None
+    for r in revisoes:
+        for c in CABECALHO.finditer(r.get("body") or ""):
+            ultima = c
+    if not ultima:
+        return False, (f"sem revisão de outro agente (autor: {autor}); publique com "
+                       '"gh pr review <N> --comment" e o cabeçalho "Revisão por X · autor Y · veredito: ..."')
+
+    veredito = ultima["veredito"].strip().lower()
+    if veredito.startswith("revise"):
+        return False, "a revisão mais recente pediu correções (veredito: Revise)"
+    if ultima["autor"].lower().startswith("autorrevis"):
+        return True, f"AVISO: autorrevisão declarada por {ultima['revisor'].strip()} (sem outro agente com crédito)"
+
+    revisor = agente(ultima["revisor"])
+    if revisor is None:
+        return False, f'revisor "{ultima["revisor"].strip()}" não é Claude Code, Codex nem Gemini'
+    if revisor == autor:
+        return False, f"o revisor ({revisor}) é o próprio autor; peça a revisão a outro agente"
+    return True, f"revisado por {revisor} (autor: {autor}), veredito: {ultima['veredito'].strip()}"
+
+
+def main() -> int:
+    for fluxo in (sys.stdout, sys.stderr):
+        fluxo.reconfigure(encoding="utf-8")
+    p = argparse.ArgumentParser(description="Confere a revisão cruzada de um PR.")
+    p.add_argument("--corpo", required=True)
+    p.add_argument("--revisoes", required=True)
+    a = p.parse_args()
+    with open(a.corpo, encoding="utf-8") as f:
+        corpo = f.read()
+    with open(a.revisoes, encoding="utf-8") as f:
+        revisoes = json.load(f)
+    ok, motivo = avaliar(corpo, revisoes)
+    print(("revisao-check: ok — " if ok else "revisao-check: ERRO — ") + motivo)
+    return 0 if ok else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
