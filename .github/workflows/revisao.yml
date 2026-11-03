@@ -11,6 +11,7 @@ on:
 permissions:
   contents: read
   pull-requests: read
+  actions: write  # só para rodar de novo as execuções vermelhas antigas (último passo)
 
 jobs:
   revisao-cruzada:
@@ -34,3 +35,17 @@ jobs:
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: python3 scripts/revisao-check --corpo corpo.txt --revisoes revisoes.json --head "$HEAD_SHA"
+
+      # A execução disparada pelo push deste commit ficou vermelha (ainda não havia revisão).
+      # Com a revisão aprovando, roda de novo para o PR não mostrar um X vermelho antigo.
+      - name: atualizar execuções vermelhas deste commit
+        if: success() && github.event_name == 'pull_request_review'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          gh run list -R "$REPO" --workflow revisao.yml --commit "$HEAD_SHA" --status failure \
+            --json databaseId --jq '.[].databaseId' | while read -r id; do
+            gh run rerun "$id" -R "$REPO" || echo "não consegui rodar de novo a execução $id"
+          done

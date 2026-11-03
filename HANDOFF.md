@@ -18,14 +18,13 @@ sem plano: padrão do kit do QG (fase 13 do workflow-multiagente no QG)
 - camada comum do kit: AGENTS.md, CI (regras + mutantes), varredura de segredos, check de revisão cruzada
 
 ## Falta
-- revisão cruzada deste PR por outro agente
 - teste de tela no CI (caminhos do Chrome/Edge são do Windows)
 
 ## Próximo comando
-revisão do PR qg/padrao-do-kit por um agente diferente do Claude Code (gh pr review --comment)
+usuário faz o merge do PR #4 depois do check revisao-cruzada verde
 
 ## Bloqueios
 nenhum
 
 ## Atualizado em
-2026-11-03 11:40
+2026-11-03 12:00
