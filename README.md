@@ -175,6 +175,28 @@ agente. Validação pelas áreas, aprovação humana e medição ficam para a op
 - Avisos a fornecedores e pedidos de cadastro são descritos na tela, não enviados.
 - Volumes, limites das regras e o cálculo de tempo são exemplos, a validar com quem faz o processo.
 
+## Próximos passos
+
+Cada limitação acima tem um próximo passo. A ordem segue a do case: primeiro o dado confiável,
+depois a automação e só então a IA. A página atual continua como especificação: as regras e os
+testes dela valem para todas as etapas.
+
+1. **Dado real em volume.** Trocar os dados gerados no navegador por um dataset público de vendas
+   por loja e produto (sell-out), com os defeitos de fornecedor injetados por um gerador:
+   semana atrasada, reenvio, código de rede sem cadastro. O dataset é baixado por script e não
+   entra no repositório; o sell-in continua simulado e marcado como tal.
+2. **Base em camadas com SQL de verdade.** Bruta, limpa e pronta para uso, em DuckDB com dbt. As
+   regras 1 a 6 viram testes de dados que bloqueiam a carga, e o SQL mostrado passa a ser o que
+   roda.
+3. **De-para assistido.** Um modelo de linguagem sugere o produto de cada código sem cadastro,
+   pelo nome e pela embalagem. O código confere EAN e unidade, e uma pessoa aprova antes de o par
+   entrar na base.
+4. **Agente com texto livre, sem perder a regra.** O modelo só traduz o pedido para o vocabulário
+   que o agente já conhece. Quem decide se responde, pergunta ou recusa continua sendo a regra,
+   e os casos da tabela acima viram testes desse caminho.
+5. **Medição de tempo.** Registrar, para cada pedido e cada carga, o tempo gasto à mão e o tempo
+   com a automação. Sem esse número não dá para dizer quantas horas o time ganhou.
+
 ## Organização
 
 - `docs/index.html` — a página. As regras ficam no bloco `<teia-logica>`, em funções puras
