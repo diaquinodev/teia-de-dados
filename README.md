@@ -177,7 +177,8 @@ agente. Validação pelas áreas, aprovação humana e medição ficam para a op
 
 ## Próximos passos
 
-Cada limitação acima tem um próximo passo. A ordem segue a do case: primeiro o dado confiável,
+Os próximos passos atacam as limitações acima, menos o envio de avisos e pedidos de cadastro, que
+continua fora do escopo. A ordem segue a do case: primeiro o dado confiável,
 depois a automação e só então a IA. A página atual continua como especificação: as regras e os
 testes dela valem para todas as etapas.
 
@@ -186,8 +187,8 @@ testes dela valem para todas as etapas.
    semana atrasada, reenvio, código de rede sem cadastro. O dataset é baixado por script e não
    entra no repositório; o sell-in continua simulado e marcado como tal.
 2. **Base em camadas com SQL de verdade.** Bruta, limpa e pronta para uso, em DuckDB com dbt. As
-   regras 1 a 6 viram testes de dados que bloqueiam a carga, e o SQL mostrado passa a ser o que
-   roda.
+   regras 1 a 6 viram testes de dados com o mesmo efeito de hoje (carga bloqueada ou "parcial",
+   conforme a regra), e o SQL mostrado passa a ser o que roda.
 3. **De-para assistido.** Um modelo de linguagem sugere o produto de cada código sem cadastro,
    pelo nome e pela embalagem. O código confere EAN e unidade, e uma pessoa aprova antes de o par
    entrar na base.

@@ -22,10 +22,10 @@ sem plano: seção "Próximos passos" no README (só documentação)
 - executar os próximos passos do README (cada um pede brainstorm e plano antes do código)
 
 ## Próximo comando
-outro agente (Codex ou Gemini) revisa o PR de docs/proximos-passos; depois o usuário tira do rascunho e faz o merge
+Codex revisa de novo o PR #6 depois da correção do README (1ª revisão: Revise, dois achados corrigidos em 2026-11-11); com Accept, o usuário faz o Squash and merge
 
 ## Bloqueios
 nenhum
 
 ## Atualizado em
-2026-11-03
+2026-11-11
