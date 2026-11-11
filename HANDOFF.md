@@ -4,27 +4,28 @@
 Claude Code
 
 ## Branch
-qg/padrao-do-kit
+docs/proximos-passos
 
 ## Trilha
 rápida
 
 ## Plano/fase
-sem plano: padrão do kit do QG (fase 13 do workflow-multiagente no QG)
+sem plano: seção "Próximos passos" no README (só documentação)
 
 ## Feito
 - fases 1 e 2 integradas (PRs #1, #2 e #3)
-- revisão do Codex (Revise) tratada: check exige commit atual, veredito estrito, autorrevisão vermelha, CodeRabbit sem pendências
-- camada comum do kit: AGENTS.md, CI (regras + mutantes), varredura de segredos, check de revisão cruzada
+- padrão do kit do QG integrado (PR #4): AGENTS.md, CI (regras + mutantes), varredura de segredos, check de revisão cruzada
+- seção "Próximos passos" no README, entre Limitações e Organização (substitui o PR #5, que fechou quando a branch foi renomeada)
 
 ## Falta
 - teste de tela no CI (caminhos do Chrome/Edge são do Windows)
+- executar os próximos passos do README (cada um pede brainstorm e plano antes do código)
 
 ## Próximo comando
-usuário faz o merge do PR #4 depois do check revisao-cruzada verde
+Codex revisa de novo o PR #6 depois da correção do README (1ª revisão: Revise, dois achados corrigidos em 2026-11-11); com Accept, o usuário faz o Squash and merge
 
 ## Bloqueios
 nenhum
 
 ## Atualizado em
-2026-11-03 12:00
+2026-11-11
